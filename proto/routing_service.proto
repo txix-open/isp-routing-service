@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "io.grpc.routingService";
+option java_outer_classname = "RoitingServiceProto";
+
+package routing.service;
+
+import "google/api/annotations.proto";
+
+service RoutingService {
+    // ===== SYSTEM =====
+    rpc GetRoutes (Empty) returns (RoutingConfig) {
+        option (google.api.http).get = "/api/routes";
+    }
+}
+
+message Empty {
+}
+message Address {
+    string port = 1;
+    string ip = 2;
+}
+message Endpoint {
+    string path = 1;
+}
+message BackendConfig {
+    Address address = 1;
+    repeated Endpoint endpoints = 2;
+}
+message RoutingConfig {
+    repeated BackendConfig routes = 1;
+}
