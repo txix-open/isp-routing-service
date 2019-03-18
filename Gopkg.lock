@@ -45,7 +45,7 @@
   version = "v1.2.2"
 
 [[projects]]
-  digest = "1:139709b3b4eab483f24d2ef792e296502dd2a129fef6c5055aef7f9b07f87797"
+  digest = "1:4a2afeeef6b563c6fe8b66893c434a4b2cb57fe443c13e7d85d68f4de535cf45"
   name = "github.com/go-pg/pg"
   packages = [
     ".",
@@ -59,8 +59,8 @@
     "types",
   ]
   pruneopts = "UT"
-  revision = "750698e034bbc0f35e33e69df35cd8cc4c6b7d3d"
-  version = "v7.1.7"
+  revision = "3aa3c0bd0a7e1567ffe8735b10fb012759870261"
+  version = "v8.0.2"
 
 [[projects]]
   digest = "1:5eae7496bdb74a6c7592bc74ea3da8a6a61a361fd52682820900d755bb144194"
@@ -146,6 +146,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:7edb99b124d77ae909910e2ba563fbe652e9596f5798bd10f67fd66ba0fa9c82"
+  name = "github.com/integration-system/bellows"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "3f9681649fb950d5ccbb9e90843ef860696e78d0"
+
+[[projects]]
+  branch = "master"
   digest = "1:1b1d9534e35d61e861a7356f7f2d766e57e2777dbf79be60e1ac56bbd60adf51"
   name = "github.com/integration-system/go-cmp"
   packages = [
@@ -171,7 +179,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:24d83748841befeef0dfc67e70e65f3c1dcb9d3323f93f5acdc4ab0f3d5c3596"
+  digest = "1:ed0f16635f4e1ca6beb473067f764294e38a5991a9a83396fb5dc012b2d935ef"
   name = "github.com/integration-system/isp-lib"
   packages = [
     "backend",
@@ -180,7 +188,6 @@
     "config/schema",
     "database",
     "grpc-proxy",
-    "http",
     "logger",
     "metric",
     "proto/stubs",
@@ -190,7 +197,7 @@
     "utils",
   ]
   pruneopts = "UT"
-  revision = "274cff33d4bc648f4087e4cdff07fc10787662d5"
+  revision = "d1d6c58deec482f2419c5e47c3940e1f28ddf785"
 
 [[projects]]
   branch = "master"
