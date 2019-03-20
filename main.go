@@ -19,7 +19,6 @@ import (
 	"github.com/integration-system/isp-lib/grpc-proxy"
 	"github.com/integration-system/isp-lib/logger"
 	"github.com/integration-system/isp-lib/metric"
-	"github.com/integration-system/isp-lib/socket"
 	"google.golang.org/grpc"
 	"sync"
 )
@@ -90,9 +89,9 @@ func handleRouteUpdate(configs structure.RoutingConfig) bool {
 	return true
 }
 
-func socketConfiguration(cfg interface{}) socket.SocketConfiguration {
+func socketConfiguration(cfg interface{}) structure.SocketConfiguration {
 	appConfig := cfg.(*conf.Configuration)
-	return socket.SocketConfiguration{
+	return structure.SocketConfiguration{
 		Host:   appConfig.ConfigServiceAddress.IP,
 		Port:   appConfig.ConfigServiceAddress.Port,
 		Secure: false,
