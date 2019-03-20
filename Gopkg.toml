@@ -28,6 +28,10 @@
   name = "mellium.im/sasl"
   source = "https://github.com/mellium/sasl.git"
 
+[[override]]
+  name = "github.com/valyala/fasthttp"
+  branch = "master"
+
 [prune]
   go-tests = true
   unused-packages = true
