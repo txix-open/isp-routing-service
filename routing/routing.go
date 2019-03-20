@@ -158,7 +158,7 @@ func getConnFactory(addr string) grpcpool.Factory {
 
 func errorHandler(code codes.Code, errorMessage string, args ...interface{}) error {
 	incCounter(code.String())
-	return status.Errorf(code, errorMessage, args)
+	return status.Errorf(code, errorMessage, args...)
 }
 
 func director(incomingCtx context.Context, _ string, processor grpc_proxy.RequestProcessor) error {
