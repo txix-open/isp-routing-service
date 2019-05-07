@@ -600,7 +600,6 @@
     "github.com/integration-system/isp-lib/grpc-proxy",
     "github.com/integration-system/isp-lib/logger",
     "github.com/integration-system/isp-lib/metric",
-    "github.com/integration-system/isp-lib/socket",
     "github.com/integration-system/isp-lib/structure",
     "github.com/integration-system/isp-lib/utils",
     "github.com/processout/grpc-go-pool",

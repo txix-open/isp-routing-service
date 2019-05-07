@@ -182,27 +182,6 @@ func director(incomingCtx context.Context, _ string, processor grpc_proxy.Reques
 		return errorHandler(codes.Unimplemented, "Unknown method %s", method)
 	}
 	addr := balancer.Next()
-	if routingRawMap[addr][method].Inner {
-		appId, _ := utils.ResolveMetadataIdentity(utils.ApplicationIdHeader, md)
-		if appId >= 0 {
-			adminToken, present := md[utils.ADMIN_AUTH_HEADER_NAME]
-			if !present || len(adminToken) == 0 || adminToken[0] == "" {
-				return errorHandler(
-					codes.Unauthenticated,
-					"Header with admin token [%s] is required",
-					utils.ADMIN_AUTH_HEADER_NAME,
-				)
-			}
-			token, err := model.GetToken(adminToken[0])
-			if err != nil {
-				return errorHandler(codes.Internal, "Error receiving token from db: %v", err)
-			}
-			if token == nil {
-				return errorHandler(codes.PermissionDenied, "Not allowed to call this method")
-			}
-		}
-	}
-
 	if pool, conPresent := connections[addr]; conPresent {
 		con, err := pool.Get(incomingCtx)
 		if err != nil {
