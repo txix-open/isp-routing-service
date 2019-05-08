@@ -15,7 +15,6 @@ import (
 
 	"context"
 	"github.com/integration-system/isp-lib/bootstrap"
-	"github.com/integration-system/isp-lib/database"
 	"github.com/integration-system/isp-lib/grpc-proxy"
 	"github.com/integration-system/isp-lib/logger"
 	"github.com/integration-system/isp-lib/metric"
@@ -104,11 +103,9 @@ func socketConfiguration(cfg interface{}) structure.SocketConfiguration {
 
 func onShutdown(_ context.Context, _ os.Signal) {
 	stopGrpcServer()
-	database.Close()
 }
 
 func onRemoteConfigReceive(remoteConfig, oldRemoteConfig *conf.RemoteConfig) {
-	database.InitDb(remoteConfig.Database)
 	metric.InitCollectors(remoteConfig.Metrics, oldRemoteConfig.Metrics)
 	metric.InitHttpServer(remoteConfig.Metrics)
 	routing.InitMetrics()

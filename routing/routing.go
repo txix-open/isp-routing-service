@@ -4,8 +4,6 @@ import (
 	"sync"
 	"time"
 
-	"isp-routing-service/model"
-
 	"github.com/integration-system/isp-lib/grpc-proxy"
 	"github.com/integration-system/isp-lib/logger"
 	"github.com/integration-system/isp-lib/structure"
@@ -27,7 +25,6 @@ const (
 var (
 	connections       = make(map[string]*grpcpool.Pool)
 	routingConfigs    = make(map[string]*RoundRobinBalancer)
-	routingRawMap     = make(map[string]map[string]structure.EndpointConfig)
 	routingRawConfigs = structure.RoutingConfig{}
 	routingLock       = sync.RWMutex{}
 
@@ -57,7 +54,6 @@ func InitRoutes(configs structure.RoutingConfig) (bool, bool) {
 	initializingLock.Lock()
 	defer initializingLock.Unlock()
 
-	newRoutingRawMap := make(map[string]map[string]structure.EndpointConfig)
 	newConnections := make(map[string]*grpcpool.Pool)
 	newConfig := make(map[string]*RoundRobinBalancer)
 	hasErrors := false
@@ -92,12 +88,6 @@ func InitRoutes(configs structure.RoutingConfig) (bool, bool) {
 		}
 
 		for _, endpoint := range backend.Endpoints {
-			if _, ok := newRoutingRawMap[addr]; ok {
-				newRoutingRawMap[addr][endpoint.Path] = endpoint
-			} else {
-				newRoutingRawMap[addr] = map[string]structure.EndpointConfig{endpoint.Path: endpoint}
-			}
-
 			ensureHistogramForMethod(endpoint.Path)
 
 			balancer, present := newConfig[endpoint.Path]
@@ -127,7 +117,6 @@ func InitRoutes(configs structure.RoutingConfig) (bool, bool) {
 	}
 
 	routingRawConfigs = configs
-	routingRawMap = newRoutingRawMap
 	connections = newConnections
 	routingConfigs = newConfig
 
