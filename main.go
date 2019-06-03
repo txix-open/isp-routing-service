@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/integration-system/golang-socketio"
+	"github.com/integration-system/isp-lib/config/schema"
 	"github.com/integration-system/isp-lib/structure"
 	"net"
 	"os"
@@ -35,6 +36,7 @@ func main() {
 		OnLocalConfigLoad(func(cfg *conf.Configuration) {
 			startGrpcServer(cfg)
 		}).
+		DefaultRemoteConfigPath(schema.ResolveDefaultConfigPath("default_remote_config.json")).
 		RequireRoutes(handleRouteUpdate).
 		OnSocketEvent(gosocketio.OnDisconnection, func(_ *gosocketio.Channel) {
 			routing.MarkUninitialized()

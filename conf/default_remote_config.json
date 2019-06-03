@@ -1,0 +1,11 @@
+{
+  "metrics": {
+    "memory": true,
+    "address": {
+      "path": "/metrics",
+      "port": "9554",
+      "ip": "0.0.0.0"
+    },
+    "gc": true
+  }
+}
