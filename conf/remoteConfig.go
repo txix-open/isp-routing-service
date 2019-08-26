@@ -5,5 +5,5 @@ import (
 )
 
 type RemoteConfig struct {
-	Metrics structure.MetricConfiguration `schema:"Metrics"`
+	Metrics structure.MetricConfiguration `schema:"Настройка метрик"`
 }
