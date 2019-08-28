@@ -17,9 +17,10 @@ import (
 )
 
 const (
-	initialPoolSize   = 1
-	poolCapacity      = 3
-	connectionTimeout = 3 * time.Second
+	initialPoolSize    = 1
+	poolCapacity       = 3
+	connectionTimeout  = 3 * time.Second
+	defaultMessageSize = 32 * 1024 * 1024
 )
 
 var (
@@ -141,6 +142,8 @@ func getConnFactory(addr string) grpcpool.Factory {
 			grpc.WithInsecure(),
 			grpc.WithBlock(),
 			grpc.WithDefaultCallOptions(grpc.CallCustomCodec(grpc_proxy.Codec())),
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(defaultMessageSize)),
+			grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(defaultMessageSize)),
 		)
 	}
 }
