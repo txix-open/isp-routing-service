@@ -62,7 +62,9 @@ func startGrpcServer(cfg *conf.Configuration) {
 	counter := 0
 	go func() {
 		for lis, err = net.Listen("tcp", grpcAddress); err != nil; lis, err = net.Listen("tcp", grpcAddress) {
-			log.Infof(log_code.FatalGrpcServerFailedConnection, "Error grpc connection: %v, try again, err: %v", grpcAddress, err)
+			log.WithMetadata(map[string]interface{}{
+				log_code.MdAddr: grpcAddress,
+			}).Infof(log_code.FatalGrpcServerFailedConnection, "error grpc connection; try again, err: %v", err)
 			counter++
 			time.Sleep(time.Second * time.Duration(counter))
 		}
@@ -70,18 +72,20 @@ func startGrpcServer(cfg *conf.Configuration) {
 		server = grpc.NewServer(
 			grpc.CustomCodec(grpc_proxy.Codec()),
 			grpc.UnknownServiceHandler(h))
-		log.Infof(log_code.InfoGrpcServerStart, "Start grpc server on %s", grpcAddress)
+		log.WithMetadata(map[string]interface{}{
+			log_code.MdAddr: grpcAddress,
+		}).Info(log_code.InfoGrpcServerStart, "start grpc server")
 		if err := server.Serve(lis); err != nil {
 			log.Fatalf(log_code.FatalGrpcServerFailedConnection, "failed to serve: %v", err)
 		}
-		log.Info(log_code.InfoGrpcServerShutdown, "Grpc server shutdown")
+		log.Info(log_code.InfoGrpcServerShutdown, "grpc server shutdown")
 	}()
 }
 
 func handleRouteUpdate(configs structure.RoutingConfig) bool {
 	firstInit, hasErrors := routing.InitRoutes(configs)
 	if firstInit && hasErrors {
-		log.Fatal(log_code.FatalHandleRouteUpdate, "Received unreachable route while initializing. Shutdown now.")
+		log.Fatal(log_code.FatalHandleRouteUpdate, "received unreachable route while initializing. shutdown now.")
 	}
 	return true
 }

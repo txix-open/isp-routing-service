@@ -82,8 +82,10 @@ func InitRoutes(configs structure.RoutingConfig) (bool, bool) {
 			if err == nil {
 				newConnections[addr] = pool
 			} else {
-				log.Errorf(log_code.ErrorNotConnectToModule,
-					"Could not connect to %s(%s). Error: %v", backend.ModuleName, addr, err)
+				log.WithMetadata(map[string]interface{}{
+					log_code.MdModuleName: backend.ModuleName,
+					log_code.MdAddr:       addr,
+				}).Errorf(log_code.ErrorNotConnectToModule, "could not connect; error: %v", err)
 				hasErrors = true
 				continue //do not add methods to routing table
 			}
@@ -184,7 +186,10 @@ func director(incomingCtx context.Context, _ string, processor grpc_proxy.Reques
 			if con != nil && (!ok || s.Code() == codes.Unavailable) {
 				con.Unhealthy()
 			}
-			log.Errorf(log_code.ErrorBackendUnavailable, "Error: %v", err)
+			log.WithMetadata(map[string]interface{}{
+				log_code.MdMethod: method,
+				log_code.MdAddr:   addr,
+			}).Errorf(log_code.ErrorBackendUnavailable, "error: %v", err)
 			return errorHandler(codes.Unavailable, "Backend %s unavailable", addr)
 		}
 
