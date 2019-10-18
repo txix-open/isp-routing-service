@@ -4,10 +4,12 @@ import (
 	"sync"
 	"time"
 
+	"isp-routing-service/log_code"
+
 	"github.com/integration-system/isp-lib/grpc-proxy"
-	"github.com/integration-system/isp-lib/logger"
 	"github.com/integration-system/isp-lib/structure"
 	"github.com/integration-system/isp-lib/utils"
+	log "github.com/integration-system/isp-log"
 	"github.com/processout/grpc-go-pool"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -80,7 +82,8 @@ func InitRoutes(configs structure.RoutingConfig) (bool, bool) {
 			if err == nil {
 				newConnections[addr] = pool
 			} else {
-				logger.Errorf("Could not connect to %s(%s). Error: %v", backend.ModuleName, addr, err)
+				log.Errorf(log_code.ErrorNotConnectToModule,
+					"Could not connect to %s(%s). Error: %v", backend.ModuleName, addr, err)
 				hasErrors = true
 				continue //do not add methods to routing table
 			}
@@ -181,7 +184,7 @@ func director(incomingCtx context.Context, _ string, processor grpc_proxy.Reques
 			if con != nil && (!ok || s.Code() == codes.Unavailable) {
 				con.Unhealthy()
 			}
-			logger.Errorf("Error: %v", err)
+			log.Errorf(log_code.ErrorBackendUnavailable, "Error: %v", err)
 			return errorHandler(codes.Unavailable, "Backend %s unavailable", addr)
 		}
 

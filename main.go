@@ -1,26 +1,24 @@
 package main
 
 import (
-	"github.com/integration-system/golang-socketio"
-	"github.com/integration-system/isp-lib/config/schema"
-	"github.com/integration-system/isp-lib/structure"
+	"context"
 	"net"
 	"os"
+	"sync"
 	"time"
 
 	"isp-routing-service/conf"
+	"isp-routing-service/log_code"
 	"isp-routing-service/routing"
 
-	"isp-routing-service/controller"
-	"isp-routing-service/generated"
-
-	"context"
+	"github.com/integration-system/golang-socketio"
 	"github.com/integration-system/isp-lib/bootstrap"
+	"github.com/integration-system/isp-lib/config/schema"
 	"github.com/integration-system/isp-lib/grpc-proxy"
-	"github.com/integration-system/isp-lib/logger"
 	"github.com/integration-system/isp-lib/metric"
+	"github.com/integration-system/isp-lib/structure"
+	log "github.com/integration-system/isp-log"
 	"google.golang.org/grpc"
-	"sync"
 )
 
 var (
@@ -63,29 +61,27 @@ func startGrpcServer(cfg *conf.Configuration) {
 	var err error
 	counter := 0
 	go func() {
-		for lis, err = net.Listen("tcp", grpcAddress); err != nil; {
+		for lis, err = net.Listen("tcp", grpcAddress); err != nil; lis, err = net.Listen("tcp", grpcAddress) {
+			log.Infof(log_code.FatalGrpcServerFailedConnection, "Error grpc connection: %v, try again, err: %v", grpcAddress, err)
 			counter++
 			time.Sleep(time.Second * time.Duration(counter))
-			logger.Infof("Error grpc connection: %v, try again, err: %v", grpcAddress, err)
 		}
 		h := grpc_proxy.TransparentHandler(routing.GetRouter())
 		server = grpc.NewServer(
 			grpc.CustomCodec(grpc_proxy.Codec()),
 			grpc.UnknownServiceHandler(h))
-		grpcServer := controller.GetGRPCServer()
-		generated.RegisterRoutingServiceServer(server, &grpcServer)
-		logger.Infof("Start grpc server on %s", grpcAddress)
+		log.Infof(log_code.InfoGrpcServerStart, "Start grpc server on %s", grpcAddress)
 		if err := server.Serve(lis); err != nil {
-			logger.Fatalf("failed to serve: %v", err)
+			log.Fatalf(log_code.FatalGrpcServerFailedConnection, "failed to serve: %v", err)
 		}
-		logger.Info("Grpc server shutdown")
+		log.Info(log_code.InfoGrpcServerShutdown, "Grpc server shutdown")
 	}()
 }
 
 func handleRouteUpdate(configs structure.RoutingConfig) bool {
 	firstInit, hasErrors := routing.InitRoutes(configs)
 	if firstInit && hasErrors {
-		logger.Fatal("Received unreachable route while initializing. Shutdown now.")
+		log.Fatal(log_code.FatalHandleRouteUpdate, "Received unreachable route while initializing. Shutdown now.")
 	}
 	return true
 }

@@ -1,3 +1,7 @@
+### v2.2.0
+* fix listen connect
+* remove controller 
+* update to new log
 ### v2.1.2
 * add default grpc message size
 ### v2.1.1
