@@ -11,7 +11,6 @@ import (
 	"isp-routing-service/log_code"
 	"isp-routing-service/routing"
 
-	"github.com/integration-system/golang-socketio"
 	"github.com/integration-system/isp-lib/bootstrap"
 	"github.com/integration-system/isp-lib/config/schema"
 	"github.com/integration-system/isp-lib/grpc-proxy"
@@ -36,9 +35,6 @@ func main() {
 		}).
 		DefaultRemoteConfigPath(schema.ResolveDefaultConfigPath("default_remote_config.json")).
 		RequireRoutes(handleRouteUpdate).
-		OnSocketEvent(gosocketio.OnDisconnection, func(_ *gosocketio.Channel) {
-			routing.MarkUninitialized()
-		}).
 		DeclareMe(routesData).
 		SocketConfiguration(socketConfiguration).
 		OnRemoteConfigReceive(onRemoteConfigReceive).
