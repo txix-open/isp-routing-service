@@ -65,7 +65,7 @@ func InitRoutes(configs structure.RoutingConfig) (bool, bool) {
 		if backend.Address.IP == "" || backend.Address.Port == "" || len(backend.Endpoints) == 0 {
 			continue
 		}
-		countEndpoints := 0
+		/*countEndpoints := 0
 		for _, v := range backend.Endpoints {
 			if !v.IgnoreOnRouter {
 				countEndpoints += 1
@@ -73,7 +73,7 @@ func InitRoutes(configs structure.RoutingConfig) (bool, bool) {
 		}
 		if countEndpoints == 0 {
 			continue
-		}
+		}*/
 		addr := backend.Address.GetAddress()
 
 		//initializing new connections may be long time cos try connect with blocking
