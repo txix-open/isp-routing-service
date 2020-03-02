@@ -32,6 +32,10 @@
   name = "github.com/valyala/fasthttp"
   branch = "master"
 
+[[override]]
+  name = "github.com/asaskevich/govalidator"
+  version = "v9"
+
 [prune]
   go-tests = true
   unused-packages = true

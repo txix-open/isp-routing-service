@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	initialPoolSize    = 1
-	poolCapacity       = 3
+	initialPoolSize    = 4
+	poolCapacity       = 32
 	connectionTimeout  = 3 * time.Second
 	defaultMessageSize = 32 * 1024 * 1024
 )
