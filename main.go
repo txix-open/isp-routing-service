@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/vgough/grpc-proxy/proxy"
 	"net"
 	"os"
 	"sync"
@@ -11,11 +12,11 @@ import (
 	"isp-routing-service/log_code"
 	"isp-routing-service/routing"
 
-	"github.com/integration-system/isp-lib/bootstrap"
-	"github.com/integration-system/isp-lib/config/schema"
-	"github.com/integration-system/isp-lib/grpc-proxy"
-	"github.com/integration-system/isp-lib/metric"
-	"github.com/integration-system/isp-lib/structure"
+	"github.com/integration-system/isp-lib/v2/bootstrap"
+	"github.com/integration-system/isp-lib/v2/config/schema"
+
+	"github.com/integration-system/isp-lib/v2/metric"
+	"github.com/integration-system/isp-lib/v2/structure"
 	log "github.com/integration-system/isp-log"
 	"google.golang.org/grpc"
 )
@@ -64,9 +65,9 @@ func startGrpcServer(cfg *conf.Configuration) {
 			counter++
 			time.Sleep(time.Second * time.Duration(counter))
 		}
-		h := grpc_proxy.TransparentHandler(routing.GetRouter())
+		h := proxy.TransparentHandler(routing.GetRouter())
 		server = grpc.NewServer(
-			grpc.CustomCodec(grpc_proxy.Codec()),
+			grpc.CustomCodec(proxy.Codec()),
 			grpc.UnknownServiceHandler(h))
 		log.WithMetadata(map[string]interface{}{
 			log_code.MdAddr: grpcAddress,
@@ -106,7 +107,6 @@ func onShutdown(_ context.Context, _ os.Signal) {
 func onRemoteConfigReceive(remoteConfig, oldRemoteConfig *conf.RemoteConfig) {
 	metric.InitCollectors(remoteConfig.Metrics, oldRemoteConfig.Metrics)
 	metric.InitHttpServer(remoteConfig.Metrics)
-	routing.InitMetrics()
 }
 
 func routesData(localConfig interface{}) bootstrap.ModuleInfo {

@@ -1,32 +1,28 @@
 package routing
 
 import (
+	"context"
 	"sync"
 	"time"
 
-	"isp-routing-service/log_code"
-
-	"github.com/integration-system/isp-lib/grpc-proxy"
-	"github.com/integration-system/isp-lib/structure"
-	"github.com/integration-system/isp-lib/utils"
+	"github.com/integration-system/isp-lib/v2/structure"
+	"github.com/integration-system/isp-lib/v2/utils"
 	log "github.com/integration-system/isp-log"
-	"github.com/processout/grpc-go-pool"
-	"golang.org/x/net/context"
+	"github.com/vgough/grpc-proxy/proxy"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"isp-routing-service/log_code"
 )
 
 const (
-	initialPoolSize    = 4
-	poolCapacity       = 32
 	connectionTimeout  = 3 * time.Second
 	defaultMessageSize = 32 * 1024 * 1024
 )
 
 var (
-	connections       = make(map[string]*grpcpool.Pool)
+	connections       = make(map[string]*grpc.ClientConn)
 	routingConfigs    = make(map[string]*RoundRobinBalancer)
 	routingRawConfigs = structure.RoutingConfig{}
 	routingLock       = sync.RWMutex{}
@@ -35,8 +31,8 @@ var (
 	initialized      = false
 )
 
-func GetRouter() grpc_proxy.StreamDirector {
-	return director
+func GetRouter() proxy.StreamDirector {
+	return &director{}
 }
 
 func GetRoutingConfig() map[string]*RoundRobinBalancer {
@@ -57,7 +53,7 @@ func InitRoutes(configs structure.RoutingConfig) (bool, bool) {
 	initializingLock.Lock()
 	defer initializingLock.Unlock()
 
-	newConnections := make(map[string]*grpcpool.Pool)
+	newConnections := make(map[string]*grpc.ClientConn)
 	newConfig := make(map[string]*RoundRobinBalancer)
 	hasErrors := false
 
@@ -65,22 +61,13 @@ func InitRoutes(configs structure.RoutingConfig) (bool, bool) {
 		if backend.Address.IP == "" || backend.Address.Port == "" || len(backend.Endpoints) == 0 {
 			continue
 		}
-		/*countEndpoints := 0
-		for _, v := range backend.Endpoints {
-			if !v.IgnoreOnRouter {
-				countEndpoints += 1
-			}
-		}
-		if countEndpoints == 0 {
-			continue
-		}*/
 		addr := backend.Address.GetAddress()
 
 		//initializing new connections may be long time cos try connect with blocking
-		if oldPool, present := connections[addr]; !present {
-			pool, err := createConnPool(addr)
+		if oldConn, present := connections[addr]; !present {
+			conn, err := dial(addr)
 			if err == nil {
-				newConnections[addr] = pool
+				newConnections[addr] = conn
 			} else {
 				log.WithMetadata(map[string]interface{}{
 					log_code.MdModuleName: backend.ModuleName,
@@ -90,12 +77,10 @@ func InitRoutes(configs structure.RoutingConfig) (bool, bool) {
 				continue //do not add methods to routing table
 			}
 		} else {
-			newConnections[addr] = oldPool
+			newConnections[addr] = oldConn
 		}
 
 		for _, endpoint := range backend.Endpoints {
-			ensureHistogramForMethod(endpoint.Path)
-
 			balancer, present := newConfig[endpoint.Path]
 			if present {
 				balancer.addrList = append(balancer.addrList, addr)
@@ -116,9 +101,9 @@ func InitRoutes(configs structure.RoutingConfig) (bool, bool) {
 	routingLock.Lock()
 
 	//close connections
-	for addr, pool := range connections {
+	for addr, conn := range connections {
 		if _, present := newConnections[addr]; !present {
-			pool.Close()
+			_ = conn.Close()
 		}
 	}
 
@@ -134,40 +119,31 @@ func InitRoutes(configs structure.RoutingConfig) (bool, bool) {
 	return firstInit, hasErrors
 }
 
-func createConnPool(addr string) (*grpcpool.Pool, error) {
-	return grpcpool.New(getConnFactory(addr), initialPoolSize, poolCapacity, 30*time.Minute)
+func dial(addr string) (*grpc.ClientConn, error) {
+	dialCtx, cancel := context.WithTimeout(context.Background(), connectionTimeout)
+	defer cancel()
+	return grpc.DialContext(
+		dialCtx,
+		addr,
+		grpc.WithInsecure(),
+		grpc.WithBlock(),
+		grpc.WithDefaultCallOptions(grpc.CallCustomCodec(proxy.Codec())),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(defaultMessageSize)),
+		grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(defaultMessageSize)),
+	)
 }
 
-func getConnFactory(addr string) grpcpool.Factory {
-	return func() (*grpc.ClientConn, error) {
-		dialCtx, _ := context.WithTimeout(context.Background(), connectionTimeout)
-		return grpc.DialContext(
-			dialCtx,
-			addr,
-			grpc.WithInsecure(),
-			grpc.WithBlock(),
-			grpc.WithDefaultCallOptions(grpc.CallCustomCodec(grpc_proxy.Codec())),
-			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(defaultMessageSize)),
-			grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(defaultMessageSize)),
-		)
-	}
+type director struct {
 }
 
-func errorHandler(code codes.Code, errorMessage string, args ...interface{}) error {
-	incCounter(code.String())
-	return status.Errorf(code, errorMessage, args...)
-}
-
-func director(incomingCtx context.Context, _ string, processor grpc_proxy.RequestProcessor) error {
-	executeTimeTimer := mh.StartTotalTimer()
-
-	md, ok := metadata.FromIncomingContext(incomingCtx)
+func (d director) Connect(ctx context.Context, _ string) (context.Context, *grpc.ClientConn, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return errorHandler(codes.DataLoss, "Could not read metadata from request")
+		return nil, nil, status.Error(codes.DataLoss, "could not read metadata from request")
 	}
 	methodArray, present := md[utils.ProxyMethodNameHeader]
-	if !present {
-		return errorHandler(codes.DataLoss, "Metadata [%s] is required", utils.ProxyMethodNameHeader)
+	if !present || len(methodArray) == 0 {
+		return nil, nil, status.Errorf(codes.DataLoss, "metadata [%s] is required", utils.ProxyMethodNameHeader)
 	}
 	method := methodArray[0]
 
@@ -176,39 +152,16 @@ func director(incomingCtx context.Context, _ string, processor grpc_proxy.Reques
 
 	balancer, conPresent := routingConfigs[method]
 	if !conPresent {
-		return errorHandler(codes.Unimplemented, "Unknown method %s", method)
+		return nil, nil, status.Errorf(codes.Unimplemented, "unknown method %s", method)
 	}
 	addr := balancer.Next()
-	if pool, conPresent := connections[addr]; conPresent {
-		con, err := pool.Get(incomingCtx)
-		if err != nil {
-			s, ok := status.FromError(err)
-			if con != nil && (!ok || s.Code() == codes.Unavailable) {
-				con.Unhealthy()
-			}
-			log.WithMetadata(map[string]interface{}{
-				log_code.MdMethod: method,
-				log_code.MdAddr:   addr,
-			}).Errorf(log_code.ErrorBackendUnavailable, "error: %v", err)
-			return errorHandler(codes.Unavailable, "Backend %s unavailable", addr)
-		}
-
-		currentMethodTimer := startTimer(method)
-		outCtx := metadata.NewOutgoingContext(incomingCtx, md.Copy())
-		err = processor(outCtx, con.ClientConn)
-		con.Close() //put back to pool
-
-		if err == nil {
-			currentMethodTimer.End()
-			executeTimeTimer.End()
-			return nil
-		} else {
-			if st, ok := status.FromError(err); ok {
-				incCounter(st.Code().String())
-			}
-			return err
-		}
+	if conn, conPresent := connections[addr]; conPresent {
+		return ctx, conn, nil
 	} else {
-		return errorHandler(codes.Unavailable, "Backend %s unavailable", addr)
+		return nil, nil, status.Errorf(codes.Unavailable, "backend %s unavailable", addr)
 	}
+}
+
+func (d director) Release(ctx context.Context, conn *grpc.ClientConn) {
+
 }

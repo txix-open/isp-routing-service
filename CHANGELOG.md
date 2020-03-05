@@ -1,3 +1,7 @@
+### v3.1.0
+* migrate to go mod
+* remove pooling gprc connections
+* new gprc-proxy lib
 ### v3.0.0
 * update to new isp-lib & config service
 ### v2.2.0
