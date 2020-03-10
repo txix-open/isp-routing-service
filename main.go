@@ -80,10 +80,7 @@ func startGrpcServer(cfg *conf.Configuration) {
 }
 
 func handleRouteUpdate(configs structure.RoutingConfig) bool {
-	firstInit, hasErrors := routing.InitRoutes(configs)
-	if firstInit && hasErrors {
-		log.Fatal(log_code.FatalHandleRouteUpdate, "received unreachable route while initializing. shutdown now.")
-	}
+	routing.InitRoutes(configs)
 	return true
 }
 
