@@ -2,49 +2,66 @@ package routing
 
 import (
 	"github.com/integration-system/isp-lib/v2/structure"
+	"isp-routing-service/proxy"
 )
 
-var (
-	InnerMethods    = make(map[string]bool)
-	AllMethods      = make(map[string]bool)
-	AuthUserMethods = make(map[string]bool)
-)
-
-func InitRoutes(configs structure.RoutingConfig) {
-	newAddressMap := make(map[string]bool)
-	newInnerAddressMap := make(map[string]bool)
-	newAuthUserAddressMap := make(map[string]bool)
-	for i := range configs {
-		backend := &configs[i]
-		if backend.Address.IP == "" {
-			continue
+func ParseConfig(configs structure.RoutingConfig) proxy.FullModuleInfo {
+	fullInfo := make(proxy.FullModuleInfo, 0)
+	for _, config := range configs {
+		ip := config.Address.IP
+		moduleName := config.ModuleName
+		if config.HandlersInfo == nil {
+			config.HandlersInfo = map[string]structure.HandlersInfo{
+				proxy.GrpcProtocol: {
+					Endpoints:      config.Endpoints,
+					SkipAuth:       false,
+					SkipExistCheck: false,
+					Port:           config.Address.Port,
+				},
+			}
 		}
-		if backend.HandlersInfo == nil {
-			if len(backend.Endpoints) == 0 || backend.Address.Port == "" {
+
+		for protocol, info := range config.HandlersInfo {
+			if len(info.Endpoints) < 1 {
 				continue
 			}
-			addEndpointsToMaps(backend.Endpoints, newAddressMap, newInnerAddressMap, newAuthUserAddressMap)
-		} else {
-			for _, info := range backend.HandlersInfo {
-				if info.Port != "" {
-					addEndpointsToMaps(info.Endpoints, newAddressMap, newInnerAddressMap, newAuthUserAddressMap)
+			if fullInfo[moduleName] == nil {
+				fullInfo[moduleName] = map[string]proxy.ModuleInfo{
+					protocol: {
+						Paths:          getPathsFromEndpoints(info.Endpoints),
+						Addresses:      []structure.AddressConfiguration{{info.Port, ip}},
+						SkipAuth:       info.SkipAuth,
+						SkipExistCheck: info.SkipExistCheck,
+					},
 				}
+			} else {
+				el, in := fullInfo[moduleName][protocol]
+				if !in {
+					fullInfo[moduleName][protocol] = proxy.ModuleInfo{
+						Paths:          getPathsFromEndpoints(info.Endpoints),
+						Addresses:      []structure.AddressConfiguration{{info.Port, ip}},
+						SkipAuth:       info.SkipAuth,
+						SkipExistCheck: info.SkipExistCheck,
+					}
+				} else {
+					el.Addresses = append(el.Addresses, structure.AddressConfiguration{
+						Port: info.Port,
+						IP:   ip,
+					})
+					fullInfo[moduleName][protocol] = el
+				}
+
 			}
 		}
 	}
-	AllMethods = newAddressMap
-	InnerMethods = newInnerAddressMap
-	AuthUserMethods = newAuthUserAddressMap
+	return fullInfo
 }
 
-func addEndpointsToMaps(endpoints []structure.EndpointDescriptor, newAddressMap map[string]bool, newInnerAddressMap map[string]bool, newAuthUserAddressMap map[string]bool) { //nolint
-	for _, el := range endpoints {
-		newAddressMap[el.Path] = true
-		if el.Inner {
-			newInnerAddressMap[el.Path] = true
-		}
-		if el.UserAuthRequired {
-			newAuthUserAddressMap[el.Path] = true
-		}
+func getPathsFromEndpoints(endpoints []structure.EndpointDescriptor) []string {
+	paths := make([]string, len(endpoints))
+	for i := range endpoints {
+		endpoint := endpoints[i]
+		paths[i] = endpoint.Path
 	}
+	return paths
 }

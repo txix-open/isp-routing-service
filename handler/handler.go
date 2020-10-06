@@ -11,12 +11,6 @@ import (
 	"isp-routing-service/utils"
 )
 
-var (
-	helper handlerHelper
-)
-
-type handlerHelper struct{}
-
 func CompleteRequest(ctx *fasthttp.RequestCtx) {
 	initialPath := string(ctx.Path())
 
