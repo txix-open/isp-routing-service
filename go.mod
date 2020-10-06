@@ -3,9 +3,14 @@ module isp-routing-service
 go 1.13
 
 require (
-	github.com/integration-system/isp-lib/v2 v2.2.0
-	github.com/integration-system/isp-log v1.1.0
-	github.com/vgough/grpc-proxy v0.0.0-20191207203309-13d1aa04a5a6
-	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
-	google.golang.org/grpc v1.27.1
+	github.com/fasthttp/websocket v1.4.3
+	github.com/golang/protobuf v1.3.5
+	github.com/integration-system/go-cmp v0.0.0-20190131081942-ac5582987a2f
+	github.com/integration-system/isp-lib/v2 v2.6.3-0.20200925192756-f336302805fa
+	github.com/integration-system/isp-log v1.1.5
+	github.com/json-iterator/go v1.1.10
+	github.com/pkg/errors v0.9.1
+	github.com/valyala/fasthttp v1.16.0
+	golang.org/x/net v0.0.0-20200822124328-c89045814202
+	google.golang.org/grpc v1.29.1
 )

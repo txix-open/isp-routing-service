@@ -1,10 +1,13 @@
 package log_code
 
 const (
-	FatalGrpcServerFailedConnection = 701
-	InfoGrpcServerStart             = 702
-	InfoGrpcServerShutdown          = 703
-	FatalHandleRouteUpdate          = 704
-	ErrorNotConnectToModule         = 705
-	ErrorBackendUnavailable         = 706
+	WarnHttpServerShutdown = 602
+	ErrorHttpServerListen  = 603
+
+	WarnProxyGrpcHandler                = 604 //metadata: {"typeData":"", "method":""}
+	WarnConvertErrorDataMarshalResponse = 605
+
+	ErrorClientHttp = 611
+
+	ErrorWebsocketProxy = 618
 )

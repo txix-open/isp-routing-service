@@ -1,10 +1,10 @@
 configServiceAddress:
   ip: 127.0.0.1
   port: 9001
-grpcOuterAddress:
+httpOuterAddress:
   ip: 127.0.0.1
   port: 9004
-grpcInnerAddress:
+httpInnerAddress:
   ip: 0.0.0.0
   port: 9004
 moduleName: router

@@ -1,7 +1,22 @@
 package log_code
 
 const (
-	MdModuleName = "moduleName"
-	MdMethod     = "method"
-	MdAddr       = "addr"
+	MdTypeData = "typeData"
+	MdMethod   = "method"
+)
+
+var (
+	TypeData = typeData{
+		SendMultipart: "sendMultipart",
+		GetFile:       "getFile",
+		JsonContent:   "jsonContent",
+	}
+)
+
+type (
+	typeData struct {
+		SendMultipart string
+		GetFile       string
+		JsonContent   string
+	}
 )
