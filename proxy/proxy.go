@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/integration-system/isp-lib/v2/structure"
@@ -64,8 +63,6 @@ func InitProxies(configs structure.RoutingConfig) error {
 			}
 		}
 	}
-	st := store
-	fmt.Println(st)
 	return nil
 }
 
