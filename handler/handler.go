@@ -11,13 +11,7 @@ import (
 	"isp-routing-service/utils"
 )
 
-const (
-	execution = 1e6
-)
-
 var (
-	errAccounting = errors.New("accounting error")
-
 	helper handlerHelper
 )
 
