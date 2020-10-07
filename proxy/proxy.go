@@ -99,10 +99,16 @@ func makeProxy(protocol string) (Proxy, error) {
 }
 
 func Find(path string) (Proxy, string) {
-	moduleName := strings.Split(path, "/")[1]
-	items := store[moduleName]
+	moduleNameSplited := strings.Split(path, "/")
+	items := store[moduleNameSplited[1]]
+	if items == nil {
+		items = store[moduleNameSplited[2]]
+	}
 	for _, item := range items {
 		if item.pathPrefix != "" {
+			if path[0] == '/' {
+				path = path[1:]
+			}
 			if strings.HasPrefix(path, item.pathPrefix) {
 				return item.proxy, getPathWithoutPrefix(path, item.pathPrefix)
 			}

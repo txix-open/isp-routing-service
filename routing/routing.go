@@ -13,10 +13,8 @@ func ParseConfig(configs structure.RoutingConfig) proxy.FullModuleInfo {
 		if config.HandlersInfo == nil {
 			config.HandlersInfo = map[string]structure.HandlersInfo{
 				proxy.GrpcProtocol: {
-					Endpoints:      config.Endpoints,
-					SkipAuth:       false,
-					SkipExistCheck: false,
-					Port:           config.Address.Port,
+					Endpoints: config.Endpoints,
+					Port:      config.Address.Port,
 				},
 			}
 		}
