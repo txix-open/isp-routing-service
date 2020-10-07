@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/integration-system/isp-lib/v2/bootstrap"
@@ -61,7 +60,6 @@ func onShutdown(_ context.Context, _ os.Signal) {
 
 func handleRouteUpdate(configs structure.RoutingConfig) bool {
 	modulesInfo := routing.ParseConfig(configs)
-	fmt.Println(modulesInfo)
 	err := proxy.InitProxies(modulesInfo)
 	if err != nil {
 		log.Error(stdcodes.ReceiveErrorFromConfig, err)

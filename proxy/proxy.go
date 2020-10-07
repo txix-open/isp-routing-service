@@ -60,7 +60,6 @@ func InitProxies(configs FullModuleInfo) error {
 			}
 			store[moduleName] = append(store[moduleName], item)
 		}
-
 	}
 	return nil
 }
