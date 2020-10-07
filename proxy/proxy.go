@@ -5,6 +5,7 @@ import (
 
 	"github.com/integration-system/isp-lib/v2/structure"
 	log "github.com/integration-system/isp-log"
+	"github.com/integration-system/isp-log/stdcodes"
 	"github.com/pkg/errors"
 	"github.com/valyala/fasthttp"
 	"isp-routing-service/domain"
@@ -34,26 +35,28 @@ type (
 		Close()
 	}
 	storeItem struct {
-		proxy    Proxy
-		paths    []string
-		protocol string
+		proxy      Proxy
+		paths      []string
+		protocol   string
+		pathPrefix string // for backward compatibility
 	}
 	ModuleInfo struct {
 		Paths          []string
 		Addresses      []structure.AddressConfiguration
 		SkipAuth       bool
 		SkipExistCheck bool
+		PathPrefix     string // for backward compatibility
 	}
 	FullModuleInfo map[string]map[string]ModuleInfo
 )
 
 func InitProxies(configs FullModuleInfo) error {
+	store = make(map[string][]storeItem, len(configs))
 	for moduleName, protocolModuleInfo := range configs {
 		for protocol, info := range protocolModuleInfo {
 			item, err := getProxyStoreItem(moduleName, protocol, info)
 			if err != nil {
-				//TODO err code
-				log.Error(400, err)
+				log.Error(stdcodes.ReceiveErrorFromConfig, err)
 			}
 			store[moduleName] = append(store[moduleName], item)
 		}
@@ -95,15 +98,14 @@ func makeProxy(protocol string, skipAuth, skipExistCheck bool) (Proxy, error) {
 }
 
 func Find(path string) (Proxy, string) {
-	moduleName := strings.Split(path, "/")[0]
+	moduleName := strings.Split(path, "/")[1]
 	items := store[moduleName]
 	for _, item := range items {
-		//TODO path prefix
-		//if item.pathPrefix != "" {
-		//	if strings.HasPrefix(path, item.pathPrefix) {
-		//		return item.proxy, getPathWithoutPrefix(path, item.pathPrefix)
-		//	}
-		//}
+		if item.pathPrefix != "" {
+			if strings.HasPrefix(path, item.pathPrefix) {
+				return item.proxy, getPathWithoutPrefix(path, item.pathPrefix)
+			}
+		}
 		for _, iPath := range item.paths {
 			if path == iPath {
 				return item.proxy, path

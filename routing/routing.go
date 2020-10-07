@@ -42,6 +42,7 @@ func ParseConfig(configs structure.RoutingConfig) proxy.FullModuleInfo {
 						Addresses:      []structure.AddressConfiguration{{info.Port, ip}},
 						SkipAuth:       info.SkipAuth,
 						SkipExistCheck: info.SkipExistCheck,
+						PathPrefix:     info.PathPrefix,
 					}
 				} else {
 					el.Addresses = append(el.Addresses, structure.AddressConfiguration{
