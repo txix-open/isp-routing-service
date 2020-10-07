@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/integration-system/isp-lib/v2/structure"
 	log "github.com/integration-system/isp-log"
@@ -17,6 +18,7 @@ import (
 
 var (
 	store = make(map[string][]storeItem, 0)
+	mu    sync.RWMutex
 )
 
 const (
@@ -47,6 +49,8 @@ type (
 )
 
 func InitProxies(configs FullModuleInfo) error {
+	mu.Lock()
+	defer mu.Unlock()
 	store = make(map[string][]storeItem, len(configs))
 	for moduleName, protocolModuleInfo := range configs {
 		for protocol, info := range protocolModuleInfo {
