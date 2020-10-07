@@ -52,13 +52,11 @@ var upgrader = websocket.FastHTTPUpgrader{
 }
 
 type websocketProxy struct {
-	addrs          *RoundRobinAddrs
-	skipAuth       bool
-	skipExistCheck bool
+	addrs *RoundRobinAddrs
 }
 
-func NewProxy(skipAuth, skipExistCheck bool) *websocketProxy {
-	return &websocketProxy{addrs: nil, skipAuth: skipAuth, skipExistCheck: skipExistCheck}
+func NewProxy() *websocketProxy {
+	return &websocketProxy{addrs: nil}
 }
 
 func (p *websocketProxy) Consumer(addressList []structure.AddressConfiguration) bool {
@@ -135,14 +133,6 @@ func (p *websocketProxy) ProxyRequest(ctx *fasthttp.RequestCtx, path string) dom
 	})
 
 	return domain.Create().SetError(err)
-}
-
-func (p *websocketProxy) SkipAuth() bool {
-	return p.skipAuth
-}
-
-func (p *websocketProxy) SkipExistCheck() bool {
-	return p.skipExistCheck
 }
 
 func (p *websocketProxy) Close() {

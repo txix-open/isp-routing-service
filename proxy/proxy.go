@@ -30,8 +30,6 @@ type (
 	Proxy interface {
 		ProxyRequest(ctx *fasthttp.RequestCtx, path string) domain.ProxyResponse
 		Consumer([]structure.AddressConfiguration) bool
-		SkipAuth() bool
-		SkipExistCheck() bool
 		Close()
 	}
 	storeItem struct {
@@ -41,11 +39,9 @@ type (
 		pathPrefix string // for backward compatibility
 	}
 	ModuleInfo struct {
-		Paths          []string
-		Addresses      []structure.AddressConfiguration
-		SkipAuth       bool
-		SkipExistCheck bool
-		PathPrefix     string // for backward compatibility
+		Paths      []string
+		Addresses  []structure.AddressConfiguration
+		PathPrefix string // for backward compatibility
 	}
 	FullModuleInfo map[string]map[string]ModuleInfo
 )
@@ -66,30 +62,31 @@ func InitProxies(configs FullModuleInfo) error {
 }
 
 func getProxyStoreItem(moduleName string, protocol string, protocolModuleInfo ModuleInfo) (storeItem, error) {
-	p, err := makeProxy(protocol, protocolModuleInfo.SkipAuth, protocolModuleInfo.SkipExistCheck)
+	p, err := makeProxy(protocol)
 	if err != nil {
 		return storeItem{}, errors.Wrapf(err, "bad dynamic config in service %s with protocol %s", moduleName, protocol)
 	}
 	p.Consumer(protocolModuleInfo.Addresses)
 	item := storeItem{
-		proxy:    p,
-		protocol: protocol,
-		paths:    protocolModuleInfo.Paths,
+		proxy:      p,
+		protocol:   protocol,
+		paths:      protocolModuleInfo.Paths,
+		pathPrefix: protocolModuleInfo.PathPrefix,
 	}
 	return item, nil
 }
 
-func makeProxy(protocol string, skipAuth, skipExistCheck bool) (Proxy, error) {
+func makeProxy(protocol string) (Proxy, error) {
 	var proxy Proxy
 	switch protocol {
 	case HttpProtocol:
-		proxy = http.NewProxy(skipAuth, skipExistCheck)
+		proxy = http.NewProxy()
 	case GrpcProtocol:
-		proxy = grpc.NewProxy(skipAuth, skipExistCheck)
+		proxy = grpc.NewProxy()
 	case HealthCheckProtocol:
-		proxy = health_check.NewProxy(skipAuth, skipExistCheck)
+		proxy = health_check.NewProxy()
 	case WebsocketProtocol:
-		proxy = websocket.NewProxy(skipAuth, skipExistCheck)
+		proxy = websocket.NewProxy()
 	default:
 		return nil, errors.Errorf("unknown protocol '%s'", protocol)
 	}

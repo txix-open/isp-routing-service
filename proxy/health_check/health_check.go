@@ -7,12 +7,10 @@ import (
 )
 
 type healthCheckProxy struct {
-	skipAuth       bool
-	skipExistCheck bool
 }
 
-func NewProxy(skipAuth, skipExistCheck bool) *healthCheckProxy {
-	return &healthCheckProxy{skipAuth: skipAuth, skipExistCheck: skipExistCheck}
+func NewProxy() *healthCheckProxy {
+	return &healthCheckProxy{}
 }
 
 func (p *healthCheckProxy) Consumer(addressList []structure.AddressConfiguration) bool {
@@ -23,14 +21,6 @@ func (p *healthCheckProxy) ProxyRequest(ctx *fasthttp.RequestCtx, path string) d
 	ctx.Response.SetBody(ctx.Request.Body())
 	ctx.Request.SetRequestURI(path)
 	return domain.Create()
-}
-
-func (p *healthCheckProxy) SkipAuth() bool {
-	return p.skipAuth
-}
-
-func (p *healthCheckProxy) SkipExistCheck() bool {
-	return p.skipExistCheck
 }
 
 func (p *healthCheckProxy) Close() {

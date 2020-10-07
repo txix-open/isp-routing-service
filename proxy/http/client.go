@@ -19,13 +19,11 @@ var (
 )
 
 type httpProxy struct {
-	client         *fasthttp.HostClient
-	skipAuth       bool
-	skipExistCheck bool
+	client *fasthttp.HostClient
 }
 
-func NewProxy(skipAuth, skipExistCheck bool) *httpProxy {
-	return &httpProxy{client: nil, skipAuth: skipAuth, skipExistCheck: skipExistCheck}
+func NewProxy() *httpProxy {
+	return &httpProxy{client: nil}
 }
 
 func (p *httpProxy) Consumer(addressList []structure.AddressConfiguration) bool {
@@ -71,14 +69,6 @@ func (p *httpProxy) ProxyRequest(ctx *fasthttp.RequestCtx, path string) domain.P
 		SetRequestBody(ctx.Request.Body()).
 		SetResponseBody(ctx.Response.Body()).
 		SetError(err)
-}
-
-func (p *httpProxy) SkipAuth() bool {
-	return p.skipAuth
-}
-
-func (p *httpProxy) SkipExistCheck() bool {
-	return p.skipExistCheck
 }
 
 func (p *httpProxy) Close() {

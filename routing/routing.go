@@ -28,30 +28,26 @@ func ParseConfig(configs structure.RoutingConfig) proxy.FullModuleInfo {
 			if fullInfo[moduleName] == nil {
 				fullInfo[moduleName] = map[string]proxy.ModuleInfo{
 					protocol: {
-						Paths:          getPathsFromEndpoints(info.Endpoints),
-						Addresses:      []structure.AddressConfiguration{{info.Port, ip}},
-						SkipAuth:       info.SkipAuth,
-						SkipExistCheck: info.SkipExistCheck,
+						Paths:     getPathsFromEndpoints(info.Endpoints),
+						Addresses: []structure.AddressConfiguration{{info.Port, ip}},
 					},
 				}
 			} else {
 				el, in := fullInfo[moduleName][protocol]
 				if !in {
 					fullInfo[moduleName][protocol] = proxy.ModuleInfo{
-						Paths:          getPathsFromEndpoints(info.Endpoints),
-						Addresses:      []structure.AddressConfiguration{{info.Port, ip}},
-						SkipAuth:       info.SkipAuth,
-						SkipExistCheck: info.SkipExistCheck,
-						PathPrefix:     info.PathPrefix,
+						Paths:      getPathsFromEndpoints(info.Endpoints),
+						Addresses:  []structure.AddressConfiguration{{info.Port, ip}},
+						PathPrefix: info.PathPrefix,
 					}
 				} else {
 					el.Addresses = append(el.Addresses, structure.AddressConfiguration{
 						Port: info.Port,
 						IP:   ip,
 					})
+					el.PathPrefix = info.PathPrefix
 					fullInfo[moduleName][protocol] = el
 				}
-
 			}
 		}
 	}

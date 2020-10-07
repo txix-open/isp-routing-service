@@ -11,12 +11,10 @@ import (
 )
 
 type grpcProxy struct {
-	client         *backend.RxGrpcClient
-	skipAuth       bool
-	skipExistCheck bool
+	client *backend.RxGrpcClient
 }
 
-func NewProxy(skipAuth, skipExistCheck bool) *grpcProxy {
+func NewProxy() *grpcProxy {
 	return &grpcProxy{
 		client: backend.NewRxGrpcClient(
 			backend.WithDialOptions(
@@ -24,8 +22,6 @@ func NewProxy(skipAuth, skipExistCheck bool) *grpcProxy {
 				grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(int(conf.DefaultMaxResponseBodySize))),
 				grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(int(conf.DefaultMaxResponseBodySize))),
 			)),
-		skipAuth:       skipAuth,
-		skipExistCheck: skipExistCheck,
 	}
 }
 
@@ -35,14 +31,6 @@ func (p *grpcProxy) ProxyRequest(ctx *fasthttp.RequestCtx, path string) domain.P
 
 func (p *grpcProxy) Consumer(addr []structure.AddressConfiguration) bool {
 	return p.client.ReceiveAddressList(addr)
-}
-
-func (p *grpcProxy) SkipAuth() bool {
-	return p.skipAuth
-}
-
-func (p *grpcProxy) SkipExistCheck() bool {
-	return p.skipExistCheck
 }
 
 func (p *grpcProxy) Close() {
