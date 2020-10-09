@@ -9,6 +9,9 @@ func ParseConfig(configs structure.RoutingConfig) proxy.FullModuleInfo {
 	fullInfo := make(proxy.FullModuleInfo, 0)
 	for _, config := range configs {
 		ip := config.Address.IP
+		if ip == "" {
+			continue
+		}
 		moduleName := config.ModuleName
 		if config.HandlersInfo == nil {
 			config.HandlersInfo = map[string]structure.HandlersInfo{
@@ -20,7 +23,7 @@ func ParseConfig(configs structure.RoutingConfig) proxy.FullModuleInfo {
 		}
 
 		for protocol, info := range config.HandlersInfo {
-			if len(info.Endpoints) < 1 {
+			if len(info.Endpoints) < 1 || info.Port == "" {
 				continue
 			}
 			if fullInfo[moduleName] == nil {
