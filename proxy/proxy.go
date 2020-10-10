@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 
@@ -55,7 +54,6 @@ type (
 func InitProxies(configs FullModuleInfo) error {
 	mu.Lock()
 	defer mu.Unlock()
-	st := store
 	for moduleName, protocolModuleInfo := range configs {
 		for protocol, info := range protocolModuleInfo {
 			needToAdd, indexOfReplacingElem := isProxyNeedReplace(moduleName, protocol, info)
@@ -84,8 +82,6 @@ func InitProxies(configs FullModuleInfo) error {
 			}
 		}
 	}
-
-	fmt.Println("store value: ", st)
 	return nil
 }
 
