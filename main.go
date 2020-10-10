@@ -6,6 +6,7 @@ import (
 
 	"github.com/integration-system/isp-lib/v2/bootstrap"
 	"github.com/integration-system/isp-lib/v2/config/schema"
+	"github.com/integration-system/isp-lib/v2/metric"
 	"github.com/integration-system/isp-lib/v2/structure"
 	log "github.com/integration-system/isp-log"
 	"github.com/integration-system/isp-log/stdcodes"
@@ -37,6 +38,8 @@ func onLocalConfigLoad(_ *conf.Configuration) {
 }
 
 func onRemoteConfigReceive(remoteConfig, oldRemoteConfig *conf.RemoteConfig) {
+	metric.InitCollectors(remoteConfig.Metrics, oldRemoteConfig.Metrics)
+	metric.InitHttpServer(remoteConfig.Metrics)
 	server.Http.Init(remoteConfig.HttpSetting, oldRemoteConfig.HttpSetting)
 }
 

@@ -1,9 +1,11 @@
 package proxy
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/integration-system/isp-lib/v2/structure"
 	log "github.com/integration-system/isp-log"
 	"github.com/integration-system/isp-log/stdcodes"
@@ -26,6 +28,7 @@ const (
 	WebsocketProtocol   = "websocket"
 	GrpcProtocol        = "grpc"
 	HealthCheckProtocol = "healthсheck"
+	noNeedToReplace     = -1
 )
 
 type (
@@ -39,6 +42,7 @@ type (
 		paths      []string
 		protocol   string
 		pathPrefix string // for backward compatibility
+		addresses  []structure.AddressConfiguration
 	}
 	ModuleInfo struct {
 		Paths      []string
@@ -51,17 +55,53 @@ type (
 func InitProxies(configs FullModuleInfo) error {
 	mu.Lock()
 	defer mu.Unlock()
-	store = make(map[string][]storeItem, len(configs))
+	st := store
 	for moduleName, protocolModuleInfo := range configs {
 		for protocol, info := range protocolModuleInfo {
-			item, err := getProxyStoreItem(moduleName, protocol, info)
-			if err != nil {
-				log.Error(stdcodes.ReceiveErrorFromConfig, err)
+			needToAdd, indexOfReplacingElem := isProxyNeedReplace(moduleName, protocol, info)
+			if needToAdd {
+				item, err := getProxyStoreItem(moduleName, protocol, info)
+				if err != nil {
+					log.Error(stdcodes.ReceiveErrorFromConfig, err)
+				}
+				store[moduleName] = append(store[moduleName], item)
 			}
-			store[moduleName] = append(store[moduleName], item)
+			if indexOfReplacingElem != noNeedToReplace {
+				item, err := getProxyStoreItem(moduleName, protocol, info)
+				if err != nil {
+					log.Error(stdcodes.ReceiveErrorFromConfig, err)
+				}
+				store[moduleName][indexOfReplacingElem] = item
+			}
 		}
 	}
+	if len(configs) < len(store) { // if service disconnected from config
+		for moduleName := range store {
+			_, in := configs[moduleName]
+			if !in {
+				delete(store, moduleName)
+				continue
+			}
+		}
+	}
+
+	fmt.Println("store value: ", st)
 	return nil
+}
+
+func isProxyNeedReplace(moduleName string, protocol string, info ModuleInfo) (needToAdd bool, indexOfReplacingElem int) {
+	storeItem := store[moduleName]
+	for i, el := range storeItem {
+		if el.protocol == protocol {
+			if el.pathPrefix == info.PathPrefix && cmp.Equal(el.addresses, info.Addresses) {
+				return false, noNeedToReplace
+			}
+			if !cmp.Equal(el.paths, info.Paths) || el.pathPrefix != info.PathPrefix || !cmp.Equal(el.addresses, info.Addresses) {
+				return false, i
+			}
+		}
+	}
+	return true, noNeedToReplace
 }
 
 func getProxyStoreItem(moduleName string, protocol string, protocolModuleInfo ModuleInfo) (storeItem, error) {
@@ -75,6 +115,7 @@ func getProxyStoreItem(moduleName string, protocol string, protocolModuleInfo Mo
 		protocol:   protocol,
 		paths:      protocolModuleInfo.Paths,
 		pathPrefix: protocolModuleInfo.PathPrefix,
+		addresses:  protocolModuleInfo.Addresses,
 	}
 	return item, nil
 }
