@@ -19,6 +19,7 @@ func CompleteRequest(ctx *fasthttp.RequestCtx) {
 		msg := fmt.Sprintf("unknown proxy for '%s'", initialPath)
 		utils.WriteError(ctx, msg, codes.NotFound, nil)
 		domain.Create().SetError(errors.New(msg))
+		return
 	}
 	p.ProxyRequest(ctx, path)
 }
