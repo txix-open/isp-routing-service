@@ -135,6 +135,8 @@ func makeProxy(protocol string) (Proxy, error) {
 }
 
 func Find(path string) (Proxy, string) {
+	mu.Lock()
+	defer mu.Unlock()
 	moduleNameSplited := strings.Split(path, "/")
 	items := store[moduleNameSplited[1]]
 	if items == nil && len(moduleNameSplited) > 2 {
