@@ -1,3 +1,6 @@
+### v3.1.1
+* updated isp-lib
+* updated isp-event-lib
 ### v3.1.0
 * migrate to go mod
 * remove pooling gprc connections
