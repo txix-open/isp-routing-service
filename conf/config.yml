@@ -2,7 +2,7 @@ configServiceAddress:
   ip: 127.0.0.1
   port: 9001
 grpcOuterAddress:
-  ip: 127.0.0.1
+  #ip: 127.0.0.1
   port: 9004
 grpcInnerAddress:
   ip: 0.0.0.0
