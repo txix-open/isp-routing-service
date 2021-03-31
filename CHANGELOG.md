@@ -1,3 +1,5 @@
+### v3.1.3
+* increase max grpc body size to 64 MB for server
 ### v3.1.2
 * updated isp-lib
 ### v3.1.1

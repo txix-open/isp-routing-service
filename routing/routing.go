@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	connectionTimeout  = 3 * time.Second
-	defaultMessageSize = 32 * 1024 * 1024
+	connectionTimeout = 3 * time.Second
+	MaxMessageSize    = 64 * 1024 * 1024
 )
 
 var (
@@ -128,8 +128,8 @@ func dial(addr string) (*grpc.ClientConn, error) {
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
 		grpc.WithDefaultCallOptions(grpc.CallCustomCodec(proxy.Codec())),
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(defaultMessageSize)),
-		grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(defaultMessageSize)),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(MaxMessageSize)),
+		grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(MaxMessageSize)),
 	)
 }
 

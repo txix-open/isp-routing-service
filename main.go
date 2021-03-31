@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/vgough/grpc-proxy/proxy"
 	"net"
 	"os"
 	"sync"
@@ -14,10 +13,10 @@ import (
 
 	"github.com/integration-system/isp-lib/v2/bootstrap"
 	"github.com/integration-system/isp-lib/v2/config/schema"
-
 	"github.com/integration-system/isp-lib/v2/metric"
 	"github.com/integration-system/isp-lib/v2/structure"
 	log "github.com/integration-system/isp-log"
+	"github.com/vgough/grpc-proxy/proxy"
 	"google.golang.org/grpc"
 )
 
@@ -25,7 +24,6 @@ var (
 	server  *grpc.Server
 	lock    = sync.RWMutex{}
 	version = "0.1.0"
-	date    = "undefined"
 )
 
 func main() {
@@ -68,7 +66,10 @@ func startGrpcServer(cfg *conf.Configuration) {
 		h := proxy.TransparentHandler(routing.GetRouter())
 		server = grpc.NewServer(
 			grpc.CustomCodec(proxy.Codec()),
-			grpc.UnknownServiceHandler(h))
+			grpc.UnknownServiceHandler(h),
+			grpc.MaxRecvMsgSize(routing.MaxMessageSize),
+			grpc.MaxSendMsgSize(routing.MaxMessageSize),
+		)
 		log.WithMetadata(map[string]interface{}{
 			log_code.MdAddr: grpcAddress,
 		}).Info(log_code.InfoGrpcServerStart, "start grpc server")
@@ -112,6 +113,5 @@ func routesData(localConfig interface{}) bootstrap.ModuleInfo {
 		ModuleName:       cfg.ModuleName,
 		ModuleVersion:    version,
 		GrpcOuterAddress: cfg.GrpcOuterAddress,
-		Handlers:         []interface{}{},
 	}
 }
