@@ -1,3 +1,5 @@
+### v3.1.4
+* updated dependencies
 ### v3.1.3
 * increase max grpc body size to 64 MB for server
 ### v3.1.2
