@@ -1,3 +1,6 @@
+### v3.1.5
+* updated dependencies
+* migrated to common local config
 ### v3.1.4
 * updated dependencies
 ### v3.1.3

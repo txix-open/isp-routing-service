@@ -8,4 +8,3 @@ grpcInnerAddress:
   ip: 0.0.0.0
   port: 9004
 moduleName: router
-instanceUuid: 3f4faf30-8482-48ef-931a-b15575a3af1d
