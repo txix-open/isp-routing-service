@@ -1,116 +1,34 @@
 package main
 
 import (
-	"context"
-	"net"
-	"os"
-	"sync"
-	"time"
-
+	"github.com/integration-system/isp-kit/bootstrap"
+	"github.com/integration-system/isp-kit/shutdown"
+	"isp-routing-service/assembly"
 	"isp-routing-service/conf"
-	"isp-routing-service/log_code"
-	"isp-routing-service/routing"
-
-	"github.com/integration-system/isp-lib/v2/bootstrap"
-	"github.com/integration-system/isp-lib/v2/config/schema"
-	"github.com/integration-system/isp-lib/v2/metric"
-	"github.com/integration-system/isp-lib/v2/structure"
-	log "github.com/integration-system/isp-log"
-	"github.com/vgough/grpc-proxy/proxy"
-	"google.golang.org/grpc"
 )
 
 var (
-	server  *grpc.Server
-	lock    = sync.RWMutex{}
-	version = "0.1.0"
+	version = "1.0.0"
 )
 
 func main() {
-	bootstrap.
-		ServiceBootstrap(&conf.Configuration{}, &conf.RemoteConfig{}).
-		OnLocalConfigLoad(func(cfg *conf.Configuration) {
-			startGrpcServer(cfg)
-		}).
-		DefaultRemoteConfigPath(schema.ResolveDefaultConfigPath("default_remote_config.json")).
-		RequireRoutes(handleRouteUpdate).
-		DeclareMe(routesData).
-		SocketConfiguration(socketConfiguration).
-		OnRemoteConfigReceive(onRemoteConfigReceive).
-		OnShutdown(onShutdown).
-		Run()
-}
+	boot := bootstrap.New(version, conf.Remote{}, nil)
+	app := boot.App
+	logger := app.Logger()
 
-func stopGrpcServer() {
-	lock.Lock()
-	if server != nil {
-		server.GracefulStop()
-		server = nil
-	}
-	lock.Unlock()
-}
+	assembly := assembly.New(boot)
+	app.AddRunners(assembly.Runners()...)
+	app.AddClosers(assembly.Closers()...)
 
-func startGrpcServer(cfg *conf.Configuration) {
-	grpcAddress := cfg.GrpcInnerAddress.GetAddress()
-	var lis net.Listener
-	var err error
-	counter := 0
-	go func() {
-		for lis, err = net.Listen("tcp", grpcAddress); err != nil; lis, err = net.Listen("tcp", grpcAddress) {
-			log.WithMetadata(map[string]interface{}{
-				log_code.MdAddr: grpcAddress,
-			}).Infof(log_code.FatalGrpcServerFailedConnection, "error grpc connection; try again, err: %v", err)
-			counter++
-			time.Sleep(time.Second * time.Duration(counter))
-		}
-		h := proxy.TransparentHandler(routing.GetRouter())
-		server = grpc.NewServer(
-			grpc.CustomCodec(proxy.Codec()),
-			grpc.UnknownServiceHandler(h),
-			grpc.MaxRecvMsgSize(routing.MaxMessageSize),
-			grpc.MaxSendMsgSize(routing.MaxMessageSize),
-		)
-		log.WithMetadata(map[string]interface{}{
-			log_code.MdAddr: grpcAddress,
-		}).Info(log_code.InfoGrpcServerStart, "start grpc server")
-		if err := server.Serve(lis); err != nil {
-			log.Fatalf(log_code.FatalGrpcServerFailedConnection, "failed to serve: %v", err)
-		}
-		log.Info(log_code.InfoGrpcServerShutdown, "grpc server shutdown")
-	}()
-}
+	shutdown.On(func() {
+		logger.Info(app.Context(), "starting shutdown")
+		app.Shutdown()
+		logger.Info(app.Context(), "shutdown completed")
+	})
 
-func handleRouteUpdate(configs structure.RoutingConfig) bool {
-	routing.InitRoutes(configs)
-	return true
-}
-
-func socketConfiguration(cfg interface{}) structure.SocketConfiguration {
-	appConfig := cfg.(*conf.Configuration)
-	return structure.SocketConfiguration{
-		Host:   appConfig.ConfigServiceAddress.IP,
-		Port:   appConfig.ConfigServiceAddress.Port,
-		Secure: false,
-		UrlParams: map[string]string{
-			"module_name": appConfig.ModuleName,
-		},
-	}
-}
-
-func onShutdown(_ context.Context, _ os.Signal) {
-	stopGrpcServer()
-}
-
-func onRemoteConfigReceive(remoteConfig, oldRemoteConfig *conf.RemoteConfig) {
-	metric.InitCollectors(remoteConfig.Metrics, oldRemoteConfig.Metrics)
-	metric.InitHttpServer(remoteConfig.Metrics)
-}
-
-func routesData(localConfig interface{}) bootstrap.ModuleInfo {
-	cfg := localConfig.(*conf.Configuration)
-	return bootstrap.ModuleInfo{
-		ModuleName:       cfg.ModuleName,
-		ModuleVersion:    version,
-		GrpcOuterAddress: cfg.GrpcOuterAddress,
+	err := app.Run()
+	if err != nil {
+		app.Shutdown()
+		logger.Fatal(app.Context(), err)
 	}
 }
