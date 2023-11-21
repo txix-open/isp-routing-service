@@ -85,7 +85,7 @@ func (d *Director) Upgrade(logger log.Logger, config cluster.RoutingConfig) {
 	defer d.lock.Unlock()
 
 	for addr, conn := range d.addressesToConns {
-		if _, present := addressesToConns[addr]; !present {
+		if _, present := addressesToConns[addr]; !present && conn.alive {
 			_ = conn.conn.Close()
 		}
 	}
