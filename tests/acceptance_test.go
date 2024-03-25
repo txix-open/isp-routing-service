@@ -78,7 +78,7 @@ func TestAcceptance(t *testing.T) {
 	require.EqualValues(codes.Unavailable, status.Code(err))
 
 	resp := ""
-	err = proxyCli.Invoke("alive_backend/endpoint").ReadJsonResponse(&resp).Do(context.Background())
+	err = proxyCli.Invoke("alive_backend/endpoint").JsonResponseBody(&resp).Do(context.Background())
 	require.NoError(err)
 	require.EqualValues("OK", resp)
 

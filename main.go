@@ -28,7 +28,6 @@ func main() {
 
 	err := app.Run()
 	if err != nil {
-		app.Shutdown()
-		logger.Fatal(app.Context(), err)
+		boot.Fatal(err)
 	}
 }
