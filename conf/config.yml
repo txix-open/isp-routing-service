@@ -2,10 +2,17 @@ configServiceAddress:
   ip: 127.0.0.1
   port: 9001
 grpcOuterAddress:
-  ip: 127.0.0.1
+  #ip: 127.0.0.1
   port: 9004
 grpcInnerAddress:
   ip: 0.0.0.0
   port: 9004
 moduleName: router
-instanceUuid: 3f4faf30-8482-48ef-931a-b15575a3af1d
+
+logfile:
+  path: /var/log/isp-routing-service/runtime.log
+  maxSizeMb: 512
+  maxBackups: 4
+  compress: true
+
+infraServerPort: 9554
