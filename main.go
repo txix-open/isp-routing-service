@@ -16,7 +16,11 @@ func main() {
 	app := boot.App
 	logger := app.Logger()
 
-	assembly := assembly.New(boot)
+	assembly, err := assembly.New(boot)
+	if err != nil {
+		boot.Fatal(err)
+	}
+
 	app.AddRunners(assembly.Runners()...)
 	app.AddClosers(assembly.Closers()...)
 
@@ -26,7 +30,7 @@ func main() {
 		logger.Info(app.Context(), "shutdown completed")
 	})
 
-	err := app.Run()
+	err = app.Run()
 	if err != nil {
 		boot.Fatal(err)
 	}
