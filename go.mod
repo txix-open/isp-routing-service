@@ -3,6 +3,7 @@ module isp-routing-service
 go 1.22
 
 require (
+	github.com/gorilla/mux v1.8.1
 	github.com/integration-system/isp-kit v1.29.2
 	github.com/pkg/errors v0.9.1
 	github.com/vgough/grpc-proxy v0.0.0-20210913231538-71832b651269

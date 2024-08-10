@@ -28,7 +28,7 @@ func TestAcceptance(t *testing.T) {
 		return status.Error(codes.FailedPrecondition, "test error")
 	})
 
-	director := service.NewDirector()
+	director := service.NewDirector(test.Logger())
 	targetHost, targetPort, err := net.SplitHostPort(targetAddr)
 	require.NoError(err)
 	routing := cluster.RoutingConfig{{
@@ -56,7 +56,7 @@ func TestAcceptance(t *testing.T) {
 			Port: targetPort,
 		},
 	}}
-	director.Upgrade(test.Logger(), routing)
+	director.Upgrade(routing)
 	proxyServer := assembly.NewGrpcProxyServer(director)
 	proxyListener, err := net.Listen("tcp", "127.0.0.1:")
 	require.NoError(err)

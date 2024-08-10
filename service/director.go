@@ -3,6 +3,9 @@ package service
 import (
 	"context"
 	"net"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"sync"
 	"time"
 
@@ -24,21 +27,40 @@ const (
 	MaxMessageSize    = 64 * 1024 * 1024
 )
 
+// nolint:gomnd
+var (
+	httpTransport = &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: defaultTransportDialContext(&net.Dialer{
+			Timeout:   3 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}),
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          512,
+		MaxIdleConnsPerHost:   32,
+		IdleConnTimeout:       60 * time.Second,
+		TLSHandshakeTimeout:   5 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+)
+
 type Director struct {
 	addressesToConns     map[string]*Conn
 	endpointsToAddresses map[string]*lb.RoundRobin
 	lock                 *sync.RWMutex
+	logger               log.Logger
 }
 
-func NewDirector() *Director {
+func NewDirector(logger log.Logger) *Director {
 	return &Director{
 		addressesToConns:     map[string]*Conn{},
 		endpointsToAddresses: map[string]*lb.RoundRobin{},
 		lock:                 &sync.RWMutex{},
+		logger:               logger,
 	}
 }
 
-func (d *Director) Upgrade(logger log.Logger, config cluster.RoutingConfig) {
+func (d *Director) Upgrade(config cluster.RoutingConfig) {
 	addressesToConns := make(map[string]*Conn)
 	endpointsToAddressArray := make(map[string][]string)
 	aliveBackendsCount := 0
@@ -54,7 +76,7 @@ func (d *Director) Upgrade(logger log.Logger, config cluster.RoutingConfig) {
 		} else {
 			conn, err := d.dial(addr)
 			if err != nil {
-				logger.Error(
+				d.logger.Error(
 					context.Background(),
 					"couldn't connect",
 					log.String("moduleName", declaration.ModuleName),
@@ -92,7 +114,7 @@ func (d *Director) Upgrade(logger log.Logger, config cluster.RoutingConfig) {
 	d.addressesToConns = addressesToConns
 	d.endpointsToAddresses = endpointsToAddresses
 
-	logger.Info(
+	d.logger.Info(
 		context.Background(),
 		"change routing table",
 		log.Int("totalBackends", len(d.addressesToConns)),
@@ -150,4 +172,47 @@ func (d *Director) dial(addr string) (*grpc.ClientConn, error) {
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(MaxMessageSize)),
 		grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(MaxMessageSize)),
 	)
+}
+
+func (d *Director) Handle(writer http.ResponseWriter, request *http.Request) {
+	var (
+		ctx         = request.Context()
+		path        = request.URL.Path
+		rr, present = d.endpointsToAddresses[path]
+	)
+
+	if !present {
+		d.logger.Error(context.Background(), "couldn't find address for path", log.String("path", path))
+		writer.WriteHeader(http.StatusNotFound)
+		return
+	}
+	addr, err := rr.Next()
+	if err != nil {
+		d.logger.Error(context.Background(), "load balancer/next", log.String("path", path))
+		writer.WriteHeader(http.StatusNotFound)
+		return
+	}
+	newAddr, _ := url.JoinPath(request.URL.Scheme+"://"+addr, path)
+	newUrl, err := url.Parse(newAddr)
+	if err != nil {
+		d.logger.Error(context.Background(), "couldn't parse url", log.String("url", newAddr))
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	reverseProxy := httputil.NewSingleHostReverseProxy(newUrl)
+	reverseProxy.Transport = httpTransport
+	reverseProxy.ErrorHandler = func(writer http.ResponseWriter, request *http.Request, err error) {
+		d.logger.Error(context.Background(), "reverse proxy", log.String("url", request.URL.String()))
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, connectionTimeout)
+	defer cancel()
+
+	request = request.WithContext(ctx)
+	reverseProxy.ServeHTTP(writer, request)
+}
+
+func defaultTransportDialContext(dialer *net.Dialer) func(context.Context, string, string) (net.Conn, error) {
+	return dialer.DialContext
 }

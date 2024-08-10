@@ -9,6 +9,8 @@ grpcInnerAddress:
   port: 9004
 moduleName: router
 
+HttpServerAddress: localhost:9513
+
 logfile:
   path: /var/log/isp-routing-service/runtime.log
   maxSizeMb: 512
