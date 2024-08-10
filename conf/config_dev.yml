@@ -9,7 +9,8 @@ grpcInnerAddress:
   port: 9004
 moduleName: router
 
-HttpServerAddress: localhost:9513
+HttpServerHost: localhost
+HttpServerPort: 9513
 
 logfile:
   path: /var/log/isp-routing-service/runtime.log

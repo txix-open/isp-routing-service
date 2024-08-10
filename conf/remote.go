@@ -1,5 +1,6 @@
 package conf
 
 type Remote struct {
-	HttpServerAddress string
+	HttpServerHost string
+	HttpServerPort string
 }

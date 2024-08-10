@@ -70,7 +70,7 @@ func (a *Assembly) Runners() []app.Runner {
 			return a.grpcServer.Serve(lis)
 		}),
 		app.RunnerFunc(func(ctx context.Context) error {
-			return a.httpServer.ListenAndServe(a.conf.HttpServerAddress)
+			return a.httpServer.ListenAndServe(net.JoinHostPort(a.conf.HttpServerHost, a.conf.HttpServerPort))
 		}),
 		app.RunnerFunc(func(ctx context.Context) error {
 			return a.boot.ClusterCli.Run(ctx, eventHandler)
