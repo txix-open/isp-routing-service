@@ -182,20 +182,20 @@ func (d *Director) Handle(writer http.ResponseWriter, request *http.Request) {
 	)
 
 	if !present {
-		d.logger.Error(context.Background(), "couldn't find address for path", log.String("path", path))
+		d.logger.Error(ctx, "couldn't find address for path", log.String("path", path))
 		writer.WriteHeader(http.StatusNotFound)
 		return
 	}
 	addr, err := rr.Next()
 	if err != nil {
-		d.logger.Error(context.Background(), "load balancer/next", log.String("path", path))
+		d.logger.Error(ctx, "load balancer/next", log.String("path", path))
 		writer.WriteHeader(http.StatusNotFound)
 		return
 	}
 	newAddr, _ := url.JoinPath(request.URL.Scheme+"://"+addr, path)
 	newUrl, err := url.Parse(newAddr)
 	if err != nil {
-		d.logger.Error(context.Background(), "couldn't parse url", log.String("url", newAddr))
+		d.logger.Error(ctx, "couldn't parse url", log.String("url", newAddr))
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -203,7 +203,7 @@ func (d *Director) Handle(writer http.ResponseWriter, request *http.Request) {
 	reverseProxy := httputil.NewSingleHostReverseProxy(newUrl)
 	reverseProxy.Transport = httpTransport
 	reverseProxy.ErrorHandler = func(writer http.ResponseWriter, request *http.Request, err error) {
-		d.logger.Error(context.Background(), "reverse proxy", log.String("url", request.URL.String()))
+		d.logger.Error(ctx, "reverse proxy", log.String("url", request.URL.String()))
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, connectionTimeout)
