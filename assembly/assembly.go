@@ -4,15 +4,15 @@ import (
 	"context"
 	"net"
 
-	"github.com/integration-system/isp-kit/app"
-	"github.com/integration-system/isp-kit/bootstrap"
-	"github.com/integration-system/isp-kit/cluster"
 	"github.com/pkg/errors"
+	"github.com/txix-open/isp-kit/app"
+	"github.com/txix-open/isp-kit/bootstrap"
+	"github.com/txix-open/isp-kit/cluster"
 	"github.com/vgough/grpc-proxy/proxy"
 	"google.golang.org/grpc"
 	"isp-routing-service/service"
 
-	"github.com/integration-system/isp-kit/log"
+	"github.com/txix-open/isp-kit/log"
 )
 
 type Assembly struct {
@@ -71,7 +71,7 @@ func (a *Assembly) Closers() []app.Closer {
 
 func NewGrpcProxyServer(director proxy.StreamDirector) *grpc.Server {
 	return grpc.NewServer(
-		grpc.CustomCodec(proxy.Codec()), //nolint:staticcheck
+		grpc.ForceServerCodec(proxy.Codec()), //nolint:staticcheck
 		grpc.UnknownServiceHandler(proxy.TransparentHandler(director)),
 		grpc.MaxRecvMsgSize(service.MaxMessageSize),
 		grpc.MaxSendMsgSize(service.MaxMessageSize),

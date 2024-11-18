@@ -1,17 +1,17 @@
-package tests
+package tests_test
 
 import (
 	"context"
 	"net"
 	"testing"
 
-	"github.com/integration-system/isp-kit/cluster"
-	"github.com/integration-system/isp-kit/grpc"
-	"github.com/integration-system/isp-kit/grpc/client"
-	endpoint2 "github.com/integration-system/isp-kit/grpc/endpoint"
-	"github.com/integration-system/isp-kit/grpc/isp"
-	"github.com/integration-system/isp-kit/log"
-	"github.com/integration-system/isp-kit/test"
+	"github.com/txix-open/isp-kit/cluster"
+	"github.com/txix-open/isp-kit/grpc"
+	"github.com/txix-open/isp-kit/grpc/client"
+	endpoint2 "github.com/txix-open/isp-kit/grpc/endpoint"
+	"github.com/txix-open/isp-kit/grpc/isp"
+	"github.com/txix-open/isp-kit/log"
+	"github.com/txix-open/isp-kit/test"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"isp-routing-service/assembly"
@@ -19,6 +19,8 @@ import (
 )
 
 func TestAcceptance(t *testing.T) {
+	t.Parallel()
+
 	test, require := test.New(t)
 
 	targetSrv, targetAddr := NewMock(test)
