@@ -6,11 +6,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/integration-system/isp-kit/cluster"
-	ispgrpc "github.com/integration-system/isp-kit/grpc"
-	"github.com/integration-system/isp-kit/lb"
-	"github.com/integration-system/isp-kit/log"
 	"github.com/pkg/errors"
+	"github.com/txix-open/isp-kit/cluster"
+	ispgrpc "github.com/txix-open/isp-kit/grpc"
+	"github.com/txix-open/isp-kit/lb"
+	"github.com/txix-open/isp-kit/log"
 	"github.com/vgough/grpc-proxy/proxy"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -104,11 +104,11 @@ func (d *Director) Upgrade(logger log.Logger, config cluster.RoutingConfig) {
 func (d *Director) Connect(ctx context.Context, _ string) (context.Context, *grpc.ClientConn, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return nil, nil, status.Error(codes.DataLoss, "could not read metadata from request context")
+		return nil, nil, status.Error(codes.DataLoss, "could not read metadata from request context") //nolint:wrapcheck
 	}
 	endpoint, err := ispgrpc.StringFromMd(ispgrpc.ProxyMethodNameHeader, md)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.WithMessagef(err, "get '%s' from metadata", ispgrpc.ProxyMethodNameHeader)
 	}
 
 	d.lock.RLock()
@@ -141,13 +141,17 @@ func (d *Director) Release(_ context.Context, _ *grpc.ClientConn) {
 func (d *Director) dial(addr string) (*grpc.ClientConn, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), connectionTimeout)
 	defer cancel()
-	return grpc.DialContext(
+	cli, err := grpc.DialContext( //nolint:staticcheck
 		ctx,
 		addr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
-		grpc.WithDefaultCallOptions(grpc.CallCustomCodec(proxy.Codec())), //nolint:staticcheck
+		grpc.WithBlock(), //nolint:staticcheck
+		grpc.WithDefaultCallOptions(grpc.ForceCodec(proxy.Codec())),
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(MaxMessageSize)),
 		grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(MaxMessageSize)),
 	)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "grpc dial to '%s'", addr)
+	}
+	return cli, nil
 }
