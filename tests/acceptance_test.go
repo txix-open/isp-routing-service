@@ -1,7 +1,6 @@
 package tests_test
 
 import (
-	"context"
 	"net"
 	"testing"
 
@@ -71,20 +70,20 @@ func TestAcceptance(t *testing.T) {
 	require.NoError(err)
 	proxyCli.Upgrade([]string{proxyListener.Addr().String()})
 
-	err = proxyCli.Invoke("unknown_endpoint").Do(context.Background())
+	err = proxyCli.Invoke("unknown_endpoint").Do(t.Context())
 	require.Error(err)
 	require.EqualValues(codes.Unimplemented, status.Code(err))
 
-	err = proxyCli.Invoke("dead_backend/endpoint").Do(context.Background())
+	err = proxyCli.Invoke("dead_backend/endpoint").Do(t.Context())
 	require.Error(err)
 	require.EqualValues(codes.Unavailable, status.Code(err))
 
 	resp := ""
-	err = proxyCli.Invoke("alive_backend/endpoint").JsonResponseBody(&resp).Do(context.Background())
+	err = proxyCli.Invoke("alive_backend/endpoint").JsonResponseBody(&resp).Do(t.Context())
 	require.NoError(err)
 	require.EqualValues("OK", resp)
 
-	err = proxyCli.Invoke("alive_backend/endpoint_with_error").Do(context.Background())
+	err = proxyCli.Invoke("alive_backend/endpoint_with_error").Do(t.Context())
 	require.Error(err)
 	require.EqualValues(codes.FailedPrecondition, status.Code(err))
 }
