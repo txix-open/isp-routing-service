@@ -4,7 +4,7 @@ go 1.24
 
 require (
 	github.com/pkg/errors v0.9.1
-	github.com/txix-open/isp-kit v1.54.0
+	github.com/txix-open/isp-kit v1.54.1
 	github.com/vgough/grpc-proxy v0.0.0-20240421214016-5db1f5027ee2
 	google.golang.org/grpc v1.74.2
 )
