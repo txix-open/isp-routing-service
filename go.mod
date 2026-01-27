@@ -5,7 +5,7 @@ go 1.25
 require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
-	github.com/txix-open/isp-kit v1.31.5-0.20260122130000-6a7f11644724
+	github.com/txix-open/isp-kit v1.64.8
 	google.golang.org/grpc v1.75.1
 )
 

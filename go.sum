@@ -113,6 +113,8 @@ github.com/txix-open/isp-kit v1.31.5-0.20260120144804-eadf9a93590c h1:znLplIa/s3
 github.com/txix-open/isp-kit v1.31.5-0.20260120144804-eadf9a93590c/go.mod h1:GvBsX5p2U3/ugK6PuWANYzSy/4YgawROm3eAKb35G6o=
 github.com/txix-open/isp-kit v1.31.5-0.20260122130000-6a7f11644724 h1:Fo/MFRZo2UVrE8q9aLWE+1076cQlK+xveWNIWW/gC7M=
 github.com/txix-open/isp-kit v1.31.5-0.20260122130000-6a7f11644724/go.mod h1:GvBsX5p2U3/ugK6PuWANYzSy/4YgawROm3eAKb35G6o=
+github.com/txix-open/isp-kit v1.64.8 h1:nck8Gw5a7Jh6AVLqR2FihurrP5bTfeLUrodYB4j4+p4=
+github.com/txix-open/isp-kit v1.64.8/go.mod h1:GvBsX5p2U3/ugK6PuWANYzSy/4YgawROm3eAKb35G6o=
 github.com/txix-open/jsonschema v1.3.0 h1:XGuOTg22G7PdqfKypjajM20/i5FyGfFYsJKmheebKi4=
 github.com/txix-open/jsonschema v1.3.0/go.mod h1:l8YDZ1nvJrw6uxWowSVOxCV/ebiMJyapffW87ZEqH00=
 github.com/txix-open/validator/v10 v10.0.0-20250506161033-f8ce404fffdb h1:UJgT4u/QMv5QHKOQeJ7igShHa36c2/vIRqJiRLdDlf0=
