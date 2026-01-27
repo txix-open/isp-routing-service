@@ -3,11 +3,11 @@ configServiceAddress:
   port: 9001
 grpcOuterAddress:
   #ip: 127.0.0.1
-  port: 9004
+  port: 9015
 grpcInnerAddress:
   ip: 0.0.0.0
-  port: 9004
-moduleName: router
+  port: 9015
+moduleName: isp-routing-service
 
 logfile:
   path: /var/log/isp-routing-service/runtime.log
@@ -15,4 +15,4 @@ logfile:
   maxBackups: 4
   compress: true
 
-infraServerPort: 9554
+infraServerPort: 9565

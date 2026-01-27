@@ -2,56 +2,53 @@ package assembly
 
 import (
 	"context"
-	"net"
 
-	"github.com/pkg/errors"
 	"github.com/txix-open/isp-kit/app"
 	"github.com/txix-open/isp-kit/bootstrap"
 	"github.com/txix-open/isp-kit/cluster"
-	"github.com/vgough/grpc-proxy/proxy"
-	"google.golang.org/grpc"
-	"isp-routing-service/service"
+	"github.com/txix-open/isp-kit/http"
 
 	"github.com/txix-open/isp-kit/log"
 )
 
 type Assembly struct {
-	director *service.Director
 	boot     *bootstrap.Bootstrap
-	server   *grpc.Server
+	server   *http.Server
+	proxyMap map[ProxyKey]Proxy
 	logger   *log.Adapter
 }
 
 func New(boot *bootstrap.Bootstrap) *Assembly {
-	director := service.NewDirector()
 	return &Assembly{
-		director: director,
 		boot:     boot,
-		server:   NewGrpcProxyServer(director),
+		server:   http.NewServer(boot.App.Logger()),
+		proxyMap: make(map[ProxyKey]Proxy, 0),
 		logger:   boot.App.Logger(),
 	}
 }
 
-func (a *Assembly) ReceiveConfig(_ context.Context, _ []byte) error {
-	return nil
-}
+func (a *Assembly) ReceiveRoutes(_ context.Context, routingCfg cluster.RoutingConfig) error {
+	locator := NewLocator(a.logger)
+	locatorCfg := locator.LocatorConfig(routingCfg, a.proxyMap)
+	a.server.Upgrade(locatorCfg.Handler)
 
-func (a *Assembly) ReceiveRoutes(_ context.Context, routes cluster.RoutingConfig) error {
-	a.director.Upgrade(a.logger, routes)
+	for key, oldProxy := range a.proxyMap {
+		_, ok := locatorCfg.ProxyMap[key]
+		if !ok {
+			_ = oldProxy.Close()
+		}
+	}
+	a.proxyMap = locatorCfg.ProxyMap
+
 	return nil
 }
 
 func (a *Assembly) Runners() []app.Runner {
 	eventHandler := cluster.NewEventHandler().
-		RemoteConfigReceiver(a).
 		RoutesReceiver(a)
 	return []app.Runner{
 		app.RunnerFunc(func(ctx context.Context) error {
-			lis, err := net.Listen("tcp", a.boot.BindingAddress)
-			if err != nil {
-				return errors.WithMessagef(err, "listen %s", a.boot.BindingAddress)
-			}
-			return a.server.Serve(lis)
+			return a.server.ListenAndServe(a.boot.BindingAddress)
 		}),
 		app.RunnerFunc(func(ctx context.Context) error {
 			return a.boot.ClusterCli.Run(ctx, eventHandler)
@@ -63,17 +60,13 @@ func (a *Assembly) Closers() []app.Closer {
 	return []app.Closer{
 		a.boot.ClusterCli,
 		app.CloserFunc(func() error {
-			a.server.GracefulStop()
+			return a.server.Shutdown(context.Background())
+		}),
+		app.CloserFunc(func() error {
+			for _, proxy := range a.proxyMap {
+				_ = proxy.Close()
+			}
 			return nil
 		}),
 	}
-}
-
-func NewGrpcProxyServer(director proxy.StreamDirector) *grpc.Server {
-	return grpc.NewServer(
-		grpc.ForceServerCodec(proxy.Codec()), //nolint:staticcheck
-		grpc.UnknownServiceHandler(proxy.TransparentHandler(director)),
-		grpc.MaxRecvMsgSize(service.MaxMessageSize),
-		grpc.MaxSendMsgSize(service.MaxMessageSize),
-	)
 }

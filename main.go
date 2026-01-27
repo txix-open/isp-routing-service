@@ -1,10 +1,12 @@
 package main
 
 import (
-	"github.com/txix-open/isp-kit/bootstrap"
-	"github.com/txix-open/isp-kit/shutdown"
 	"isp-routing-service/assembly"
 	"isp-routing-service/conf"
+
+	"github.com/txix-open/isp-kit/bootstrap"
+	"github.com/txix-open/isp-kit/cluster"
+	"github.com/txix-open/isp-kit/shutdown"
 )
 
 var (
@@ -12,7 +14,7 @@ var (
 )
 
 func main() {
-	boot := bootstrap.New(version, conf.Remote{}, nil)
+	boot := bootstrap.New(version, conf.Remote{}, nil, cluster.HttpTransport)
 	app := boot.App
 	logger := app.Logger()
 
