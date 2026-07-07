@@ -3,7 +3,6 @@ package assembly
 import (
 	"context"
 	"net"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/txix-open/isp-kit/app"
@@ -50,12 +49,9 @@ func (a *Assembly) Runners() []app.Runner {
 
 	return []app.Runner{
 		app.RunnerFunc(func(ctx context.Context) error {
-			lisCtx, lisCancel := context.WithTimeout(context.Background(), 1*time.Second)
-			defer lisCancel()
+			config := net.ListenConfig{}
 
-			lc := &net.ListenConfig{}
-
-			lis, err := lc.Listen(lisCtx, "tcp", a.boot.BindingAddress)
+			lis, err := config.Listen(ctx, "tcp", a.boot.BindingAddress)
 			if err != nil {
 				return errors.WithMessagef(err, "listen %s", a.boot.BindingAddress)
 			}
