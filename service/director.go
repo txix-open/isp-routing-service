@@ -42,10 +42,12 @@ func (d *Director) Upgrade(logger log.Logger, config cluster.RoutingConfig) {
 	addressesToConns := make(map[string]*Conn)
 	endpointsToAddressArray := make(map[string][]string)
 	aliveBackendsCount := 0
+
 	for _, declaration := range config {
 		if declaration.Address.IP == "" || declaration.Address.Port == "" || len(declaration.Endpoints) == 0 {
 			continue
 		}
+
 		addr := net.JoinHostPort(declaration.Address.IP, declaration.Address.Port)
 
 		oldConn, present := d.addressesToConns[addr]
@@ -89,6 +91,7 @@ func (d *Director) Upgrade(logger log.Logger, config cluster.RoutingConfig) {
 			_ = conn.conn.Close()
 		}
 	}
+
 	d.addressesToConns = addressesToConns
 	d.endpointsToAddresses = endpointsToAddresses
 
@@ -106,6 +109,7 @@ func (d *Director) Connect(ctx context.Context, _ string) (context.Context, *grp
 	if !ok {
 		return nil, nil, status.Error(codes.DataLoss, "could not read metadata from request context") //nolint:wrapcheck
 	}
+
 	endpoint, err := ispgrpc.StringFromMd(ispgrpc.ProxyMethodNameHeader, md)
 	if err != nil {
 		return nil, nil, errors.WithMessagef(err, "get '%s' from metadata", ispgrpc.ProxyMethodNameHeader)
@@ -118,6 +122,7 @@ func (d *Director) Connect(ctx context.Context, _ string) (context.Context, *grp
 	if !ok {
 		return nil, nil, status.Errorf(codes.Unimplemented, "unknown endpoint %s", endpoint)
 	}
+
 	addr, err := lb.Next()
 	if err != nil {
 		return nil, nil, errors.WithMessage(err, "load balancer/next")
@@ -127,6 +132,7 @@ func (d *Director) Connect(ctx context.Context, _ string) (context.Context, *grp
 	if !ok {
 		return nil, nil, status.Errorf(codes.Unavailable, "connection not found, addr: %s, endpoint: %s", addr, endpoint)
 	}
+
 	if !conn.alive {
 		return nil, nil, status.Errorf(codes.Unavailable, "connection is not alive, addr: %s, endpoint: %s", addr, endpoint)
 	}
@@ -141,6 +147,7 @@ func (d *Director) Release(_ context.Context, _ *grpc.ClientConn) {
 func (d *Director) dial(addr string) (*grpc.ClientConn, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), connectionTimeout)
 	defer cancel()
+
 	cli, err := grpc.DialContext( //nolint:staticcheck
 		ctx,
 		addr,
@@ -153,5 +160,6 @@ func (d *Director) dial(addr string) (*grpc.ClientConn, error) {
 	if err != nil {
 		return nil, errors.WithMessagef(err, "grpc dial to '%s'", addr)
 	}
+
 	return cli, nil
 }
