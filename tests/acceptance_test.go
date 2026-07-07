@@ -1,6 +1,7 @@
 package tests_test
 
 import (
+	"context"
 	"net"
 	"testing"
 
@@ -32,6 +33,7 @@ func TestAcceptance(t *testing.T) {
 	director := service.NewDirector()
 	targetHost, targetPort, err := net.SplitHostPort(targetAddr)
 	require.NoError(err)
+
 	routing := cluster.RoutingConfig{{
 		ModuleName: "alive_backend",
 		Version:    "1.0.0",
@@ -59,8 +61,11 @@ func TestAcceptance(t *testing.T) {
 	}}
 	director.Upgrade(test.Logger(), routing)
 	proxyServer := assembly.NewGrpcProxyServer(director)
-	proxyListener, err := net.Listen("tcp", "127.0.0.1:")
+
+	lc := &net.ListenConfig{}
+	proxyListener, err := lc.Listen(context.Background(), "tcp", "127.0.0.1:")
 	require.NoError(err)
+
 	go func() {
 		err := proxyServer.Serve(proxyListener)
 		require.NoError(err)
@@ -91,40 +96,48 @@ func TestAcceptance(t *testing.T) {
 type MockServer struct {
 	srv           *grpc.Server
 	logger        log.Logger
-	mockEndpoints map[string]interface{}
+	mockEndpoints map[string]any
 }
 
 func NewMock(t *test.Test) (*MockServer, string) {
 	srv, addr := server(t, grpc.NewMux())
+
 	return &MockServer{
 		srv:           srv,
 		logger:        t.Logger(),
-		mockEndpoints: make(map[string]interface{}),
+		mockEndpoints: make(map[string]any),
 	}, addr
 }
 
-func (m *MockServer) Mock(endpoint string, handler interface{}) *MockServer {
+func (m *MockServer) Mock(endpoint string, handler any) *MockServer {
 	m.mockEndpoints[endpoint] = handler
 	wrapper := endpoint2.DefaultWrapper(m.logger)
+
 	muxer := grpc.NewMux()
 	for e, handler := range m.mockEndpoints {
 		muxer.Handle(e, wrapper.Endpoint(handler))
 	}
+
 	m.srv.Upgrade(muxer)
+
 	return m
 }
 
 func server(t *test.Test, service isp.BackendServiceServer) (*grpc.Server, string) {
 	assert := t.Assert()
 
-	listener, err := net.Listen("tcp", "127.0.0.1:")
+	lc := &net.ListenConfig{}
+	listener, err := lc.Listen(context.Background(), "tcp", "127.0.0.1:")
 	assert.NoError(err)
+
 	srv := grpc.NewServer()
+
 	assert.NoError(err)
 	t.T().Cleanup(func() {
 		srv.Shutdown()
 	})
 	srv.Upgrade(service)
+
 	go func() {
 		err := srv.Serve(listener)
 		assert.NoError(err)

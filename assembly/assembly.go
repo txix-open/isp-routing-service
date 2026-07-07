@@ -24,6 +24,7 @@ type Assembly struct {
 
 func New(boot *bootstrap.Bootstrap) *Assembly {
 	director := service.NewDirector()
+
 	return &Assembly{
 		director: director,
 		boot:     boot,
@@ -45,12 +46,16 @@ func (a *Assembly) Runners() []app.Runner {
 	eventHandler := cluster.NewEventHandler().
 		RemoteConfigReceiver(a).
 		RoutesReceiver(a)
+
 	return []app.Runner{
 		app.RunnerFunc(func(ctx context.Context) error {
-			lis, err := net.Listen("tcp", a.boot.BindingAddress)
+			config := net.ListenConfig{}
+
+			lis, err := config.Listen(ctx, "tcp", a.boot.BindingAddress)
 			if err != nil {
 				return errors.WithMessagef(err, "listen %s", a.boot.BindingAddress)
 			}
+
 			return a.server.Serve(lis)
 		}),
 		app.RunnerFunc(func(ctx context.Context) error {
